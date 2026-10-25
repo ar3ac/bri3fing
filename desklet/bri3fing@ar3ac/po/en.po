@@ -379,3 +379,63 @@ msgstr "Default desklet height"
 #: settings-schema.json:auto-shrink-height
 msgid "Automatically shrink height when there are few events"
 msgstr "Automatically shrink height when there are few events"
+
+msgid "Open Calendar"
+msgstr "Open Calendar"
+
+msgid "Search Events"
+msgstr "Search Events"
+
+msgid "Search events…"
+msgstr "Search events…"
+
+msgid "Close Search"
+msgstr "Close Search"
+
+msgid "Join"
+msgstr "Join"
+
+msgid "Join Video Call (%s)"
+msgstr "Join Video Call (%s)"
+
+msgid "Join Video Call"
+msgstr "Join Video Call"
+
+msgid "Join Video Meeting"
+msgstr "Join Video Meeting"
+
+msgid "Visible Calendars"
+msgstr "Visible Calendars"
+
+msgid "Upcoming Event: %s"
+msgstr "Upcoming Event: %s"
+
+msgid "Starting now at %s"
+msgstr "Starting now at %s"
+
+msgid "Starts in %d min (%s)"
+msgstr "Starts in %d min (%s)"
+
+msgid "No matching events"
+msgstr "No matching events"
+
+msgid "No events found matching \"%s\""
+msgstr "No events found matching \"%s\""
+
+msgid "Clear Search"
+msgstr "Clear Search"
+
+msgid "Could not launch calendar application"
+msgstr "Could not launch calendar application"
+
+msgid "Hidden calendar UIDs (comma-separated, or toggle via right-click menu)"
+msgstr "Hidden calendar UIDs (comma-separated, or toggle via right-click menu)"
+
+msgid "Desktop Notifications"
+msgstr "Desktop Notifications"
+
+msgid "Show desktop notifications for upcoming events"
+msgstr "Show desktop notifications for upcoming events"
+
+msgid "Notification lead time before event starts"
+msgstr "Notification lead time before event starts"

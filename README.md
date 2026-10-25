@@ -10,12 +10,17 @@ Designed with a stealth, minimalist dark glass aesthetic that matches [`tasks-tw
 
 - **Zero-Friction OS-Native Integration:** No Google Cloud Console setup, no client secret JSON files, and no 7-day token expiration hurdles. Bri3fing taps directly into Linux Mint's native **Online Accounts** (GNOME Online Accounts + Evolution Data Server).
 - **Chronus-Style Day-by-Day Agenda:** Continuous timeline organized day-by-day (e.g. *Today*, *Tomorrow*, *Tuesday, Oct 27*, *Monday, Nov 2*), skipping empty days for maximum clarity across a 2-week (or custom) horizon.
-- **Visual Status Badges:** Calendar color indicator strips, start/end time ranges, location tags, and real-time badges for active (**NOW**) or imminent (**SOON**) events.
+- **One-Click Video Meeting Join:** Auto-detects Google Meet, Zoom, Microsoft Teams, Webex, and Jitsi links and displays a discrete `[ 📹 Join ]` action button directly on the event row.
+- **Header Calendar Launcher:** Clicking the header date title instantly opens GNOME Calendar or the system default calendar.
+- **Real-Time Inline Search:** Expandable search bar (`[ 🔍 ]`) to filter your agenda on the fly by event title, location, description, or calendar source.
+- **Desktop Notifications:** Native Cinnamon desktop alerts 10 or 15 minutes before upcoming events begin so you never miss an appointment.
+- **Calendar Visibility Filtering:** Quickly hide or show individual calendars directly from the right-click context menu (*Visible Calendars*) or settings.
+- **Visual Status Badges & Smooth Scroll:** Calendar color indicator strips, start/end time ranges, location tags, real-time badges (**NOW** / **SOON**), smooth edge fade (`vfade`), and a sleek 5px glass scrollbar.
 - **Quick Event Creation (`[+]`):** Add upcoming appointments directly from your desktop in seconds with automatic two-way background sync to Google Calendar.
-- **Interactive Event Inspection:** Click any event on the widget to view its full details (exact time, location, notes, calendar source) or delete it directly from your schedule.
+- **Interactive Event Inspection:** Click any event on the widget to view its full details (exact time, location, notes, video call links, calendar source) or delete it directly from your schedule.
 - **Offline First:** Cached locally in the system's Evolution Data Server database, ensuring your schedule is always visible even without internet connectivity.
 - **Native Internationalization (i18n):** Multilingual support out of the box with English (`en`) and Italian (`it`) translations.
-- **Fully Customizable:** Flexible Cinnamon settings for desklet width, background opacity, font scaling, briefing range, and refresh intervals.
+- **Fully Customizable:** Flexible Cinnamon settings for desklet width, stable default height, background opacity, font scaling, briefing range, and custom field color pickers.
 
 ---
 
@@ -111,6 +116,9 @@ Configure Bri3fing directly through Cinnamon Desklet Settings (*Right-click widg
 | **Show event location** | Switch | `true` | Display event location when available |
 | **24-hour time format** | Switch | `true` | Use 24-hour format (`14:30`) vs 12-hour AM/PM |
 | **Refresh interval** | Spinbutton | `10` | Automatic refresh frequency in minutes |
+| **Hidden calendars** | Entry | `""` | Comma-separated hidden calendar UIDs (or toggle via right-click) |
+| **Desktop notifications** | Switch | `true` | Show native desktop alerts for upcoming events |
+| **Notification lead time** | Spinbutton | `10` | Minutes before event start time to notify (1–60) |
 | **Transparent background**| Switch | `false` | Enable completely transparent desklet canvas |
 | **Desklet opacity** | Spinbutton | `30%` | Card background opacity when transparency is off |
 | **Desklet width** | Spinbutton | `340px` | Total widget width in pixels |

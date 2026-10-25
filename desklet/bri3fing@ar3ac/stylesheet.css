@@ -17,11 +17,23 @@
     spacing: 6px;
 }
 
+.bri3fing-date-button {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background-color: transparent;
+}
+
 .bri3fing-date-title {
     font-size: 11pt;
     font-weight: bold;
     color: #ffffff;
     letter-spacing: -0.2px;
+    transition-duration: 120ms;
+}
+
+.bri3fing-date-button:hover .bri3fing-date-title {
+    color: #93c5fd;
 }
 
 .bri3fing-subtitle {
@@ -30,7 +42,7 @@
     padding-top: 1px;
 }
 
-/* Action Buttons (Add, Refresh) */
+/* Action Buttons (Add, Refresh, Search) */
 .bri3fing-action-button {
     background-color: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -50,9 +62,49 @@
     background-color: rgba(255, 255, 255, 0.28);
 }
 
+.bri3fing-action-button-active {
+    background-color: rgba(59, 130, 246, 0.30);
+    border-color: rgba(96, 165, 250, 0.70);
+    color: #ffffff;
+}
+
+/* Search Bar */
+.bri3fing-search-box {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 2px 4px 2px 8px;
+    margin-bottom: 5px;
+    spacing: 4px;
+}
+
+.bri3fing-search-entry {
+    color: #ffffff;
+    font-size: 8.5pt;
+    caret-color: #60a5fa;
+    selection-background-color: #3b82f6;
+    selected-color: #ffffff;
+}
+
+.bri3fing-search-close-button {
+    padding: 2px 4px;
+    color: #9ca3af;
+    border-radius: 4px;
+    transition-duration: 100ms;
+}
+
+.bri3fing-search-close-button:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
 /* Scroll View & Content */
 .bri3fing-scroll-view {
     padding-right: 2px;
+}
+
+.bri3fing-scroll-view.vfade {
+    -st-vfade-offset: 20px;
 }
 
 /* Custom Sleek Scrollbar */
@@ -207,6 +259,32 @@
     padding: 0 4px;
     margin-left: 4px;
     y-align: center;
+}
+
+/* Video Call Quick Join Button */
+.bri3fing-join-button {
+    background-color: rgba(59, 130, 246, 0.20);
+    border: 1px solid rgba(96, 165, 250, 0.40);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 4px;
+    y-align: center;
+    transition-duration: 100ms;
+}
+
+.bri3fing-join-button:hover {
+    background-color: rgba(59, 130, 246, 0.45);
+    border-color: rgba(96, 165, 250, 0.85);
+}
+
+.bri3fing-join-button:active {
+    background-color: rgba(59, 130, 246, 0.70);
+}
+
+.bri3fing-join-label {
+    font-size: 7pt;
+    font-weight: bold;
+    color: #bfdbfe;
 }
 
 /* Zero State / Empty State Card */

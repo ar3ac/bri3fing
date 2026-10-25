@@ -380,3 +380,63 @@ msgstr ""
 #: settings-schema.json:auto-shrink-height
 msgid "Automatically shrink height when there are few events"
 msgstr ""
+
+msgid "Open Calendar"
+msgstr ""
+
+msgid "Search Events"
+msgstr ""
+
+msgid "Search events…"
+msgstr ""
+
+msgid "Close Search"
+msgstr ""
+
+msgid "Join"
+msgstr ""
+
+msgid "Join Video Call (%s)"
+msgstr ""
+
+msgid "Join Video Call"
+msgstr ""
+
+msgid "Join Video Meeting"
+msgstr ""
+
+msgid "Visible Calendars"
+msgstr ""
+
+msgid "Upcoming Event: %s"
+msgstr ""
+
+msgid "Starting now at %s"
+msgstr ""
+
+msgid "Starts in %d min (%s)"
+msgstr ""
+
+msgid "No matching events"
+msgstr ""
+
+msgid "No events found matching \"%s\""
+msgstr ""
+
+msgid "Clear Search"
+msgstr ""
+
+msgid "Could not launch calendar application"
+msgstr ""
+
+msgid "Hidden calendar UIDs (comma-separated, or toggle via right-click menu)"
+msgstr ""
+
+msgid "Desktop Notifications"
+msgstr ""
+
+msgid "Show desktop notifications for upcoming events"
+msgstr ""
+
+msgid "Notification lead time before event starts"
+msgstr ""

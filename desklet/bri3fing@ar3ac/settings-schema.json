@@ -10,7 +10,8 @@
       "title": "General",
       "sections": [
         "schedule-section",
-        "sync-section"
+        "sync-section",
+        "notifications-section"
       ]
     },
     "appearance-page": {
@@ -36,7 +37,16 @@
       "title": "Synchronization & Calendar",
       "keys": [
         "refresh-interval",
-        "default-calendar-uid"
+        "default-calendar-uid",
+        "hidden-calendars"
+      ]
+    },
+    "notifications-section": {
+      "type": "section",
+      "title": "Desktop Notifications",
+      "keys": [
+        "notify-imminent-events",
+        "notify-lead-time"
       ]
     },
     "style-section": {
@@ -102,6 +112,26 @@
     "type": "entry",
     "default": "",
     "description": "Default calendar UID for quick add (leave blank for auto-selection)"
+  },
+  "hidden-calendars": {
+    "type": "entry",
+    "default": "",
+    "description": "Hidden calendar UIDs (comma-separated, or toggle via right-click menu)"
+  },
+  "notify-imminent-events": {
+    "type": "switch",
+    "default": true,
+    "description": "Show desktop notifications for upcoming events"
+  },
+  "notify-lead-time": {
+    "type": "spinbutton",
+    "default": 10,
+    "min": 1,
+    "max": 60,
+    "step": 1,
+    "units": "minutes",
+    "description": "Notification lead time before event starts",
+    "dependency": "notify-imminent-events"
   },
   "transparent-background": {
     "type": "switch",

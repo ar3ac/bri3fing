@@ -381,3 +381,63 @@ msgstr "Altezza predefinita desklet"
 #: settings-schema.json:auto-shrink-height
 msgid "Automatically shrink height when there are few events"
 msgstr "Riduci altezza automaticamente in presenza di pochi eventi"
+
+msgid "Open Calendar"
+msgstr "Apri Calendario"
+
+msgid "Search Events"
+msgstr "Cerca Eventi"
+
+msgid "Search events…"
+msgstr "Cerca eventi…"
+
+msgid "Close Search"
+msgstr "Chiudi ricerca"
+
+msgid "Join"
+msgstr "Partecipa"
+
+msgid "Join Video Call (%s)"
+msgstr "Partecipa alla videochiamata (%s)"
+
+msgid "Join Video Call"
+msgstr "Partecipa alla videochiamata"
+
+msgid "Join Video Meeting"
+msgstr "Partecipa alla videochiamata"
+
+msgid "Visible Calendars"
+msgstr "Calendari visibili"
+
+msgid "Upcoming Event: %s"
+msgstr "Evento imminente: %s"
+
+msgid "Starting now at %s"
+msgstr "Inizia adesso alle %s"
+
+msgid "Starts in %d min (%s)"
+msgstr "Inizia tra %d min (%s)"
+
+msgid "No matching events"
+msgstr "Nessun evento corrispondente"
+
+msgid "No events found matching \"%s\""
+msgstr "Nessun evento trovato per \"%s\""
+
+msgid "Clear Search"
+msgstr "Cancella ricerca"
+
+msgid "Could not launch calendar application"
+msgstr "Impossibile avviare l'applicazione calendario"
+
+msgid "Hidden calendar UIDs (comma-separated, or toggle via right-click menu)"
+msgstr "UID calendari nascosti (separati da virgola o selezionabili col tasto destro)"
+
+msgid "Desktop Notifications"
+msgstr "Notifiche desktop"
+
+msgid "Show desktop notifications for upcoming events"
+msgstr "Mostra notifiche desktop per gli eventi imminenti"
+
+msgid "Notification lead time before event starts"
+msgstr "Anticipo notifica prima dell'inizio dell'evento"

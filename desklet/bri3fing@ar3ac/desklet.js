@@ -10,6 +10,8 @@ const ModalDialog = imports.ui.modalDialog;
 const Dialog = imports.ui.dialog;
 const Tooltips = imports.ui.tooltips;
 const Pango = imports.gi.Pango;
+const Main = imports.ui.main;
+const Util = imports.misc.util;
 const Gettext = imports.gettext;
 
 const UUID = "bri3fing@ar3ac";
@@ -37,6 +39,10 @@ Bri3fingDesklet.prototype = {
         this._isLoading = false;
         this._calendars = [];
         this._events = [];
+        this._notifiedEventIds = new Set();
+        this._hiddenCalendarUids = new Set();
+        this._searchQuery = "";
+        this._calendarsSubmenu = null;
 
         // Force disable Cinnamon's default opaque decorations
         this.metadata["prevent-decorations"] = true;
@@ -50,6 +56,12 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "show-event-location", "showEventLocation", this._onConfigChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "time-format-24h", "timeFormat24h", this._onConfigChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "default-calendar-uid", "defaultCalendarUid", () => {});
+        this.settings.bindProperty(Settings.BindingDirection.IN, "hidden-calendars", "hiddenCalendarsStr", () => {
+            this._parseHiddenCalendars();
+            this._renderSchedule({ events: this._events, calendars: this._calendars });
+        });
+        this.settings.bindProperty(Settings.BindingDirection.IN, "notify-imminent-events", "notifyImminentEvents", () => {});
+        this.settings.bindProperty(Settings.BindingDirection.IN, "notify-lead-time", "notifyLeadTime", () => {});
         this.settings.bindProperty(Settings.BindingDirection.IN, "transparent-background", "transparentBackground", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-opacity", "deskletOpacity", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-width", "deskletWidth", this._onStyleChanged.bind(this));
@@ -65,6 +77,7 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "time-color", "timeColor", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "calendar-tag-color", "calendarTagColor", this._onStyleChanged.bind(this));
 
+        this._parseHiddenCalendars();
         this._buildUI();
         this._applyCustomStyle();
 
@@ -119,11 +132,20 @@ Bri3fingDesklet.prototype = {
         });
         this.header.add_actor(titleBox);
 
+        // Clickable Date Button (opens system calendar)
+        this.dateBtn = new St.Button({
+            style_class: "bri3fing-date-button",
+            reactive: true,
+            can_focus: true
+        });
         this.dateLabel = new St.Label({
             text: this._getFormattedCurrentDate(),
             style_class: "bri3fing-date-title"
         });
-        titleBox.add_actor(this.dateLabel);
+        this.dateBtn.set_child(this.dateLabel);
+        new Tooltips.Tooltip(this.dateBtn, _("Open Calendar"));
+        this.dateBtn.connect("clicked", () => this._openCalendarApp());
+        titleBox.add_actor(this.dateBtn);
 
         this.subtitleLabel = new St.Label({
             text: _("Checking schedule…"),
@@ -131,13 +153,28 @@ Bri3fingDesklet.prototype = {
         });
         titleBox.add_actor(this.subtitleLabel);
 
-        // Action buttons (Add Event + Refresh)
+        // Action buttons (Search + Add Event + Refresh)
         let actionsBox = new St.BoxLayout({
             vertical: false,
             y_align: Clutter.ActorAlign.CENTER,
             style: "spacing: 4px;"
         });
         this.header.add_actor(actionsBox);
+
+        // Search toggle button
+        this.searchBtn = new St.Button({
+            style_class: "bri3fing-action-button",
+            reactive: true,
+            can_focus: true
+        });
+        new Tooltips.Tooltip(this.searchBtn, _("Search Events"));
+        this.searchIcon = new St.Icon({
+            icon_name: "edit-find-symbolic",
+            icon_size: 15
+        });
+        this.searchBtn.set_child(this.searchIcon);
+        this.searchBtn.connect("clicked", () => this._toggleSearch());
+        actionsBox.add_actor(this.searchBtn);
 
         // Quick add button
         this.addBtn = new St.Button({
@@ -169,9 +206,43 @@ Bri3fingDesklet.prototype = {
         this.refreshBtn.connect("clicked", () => this.refresh());
         actionsBox.add_actor(this.refreshBtn);
 
-        // Scroll view for events
+        // Search box (collapsible)
+        this.searchBox = new St.BoxLayout({
+            vertical: false,
+            style_class: "bri3fing-search-box",
+            visible: false
+        });
+        this.window.add_actor(this.searchBox);
+
+        this.searchEntry = new St.Entry({
+            style_class: "bri3fing-search-entry",
+            hint_text: _("Search events…"),
+            can_focus: true,
+            x_expand: true
+        });
+        this.searchBox.add_actor(this.searchEntry);
+
+        this.searchCloseBtn = new St.Button({
+            style_class: "bri3fing-search-close-button",
+            reactive: true,
+            can_focus: true
+        });
+        let closeIcon = new St.Icon({
+            icon_name: "window-close-symbolic",
+            icon_size: 12
+        });
+        this.searchCloseBtn.set_child(closeIcon);
+        new Tooltips.Tooltip(this.searchCloseBtn, _("Close Search"));
+        this.searchCloseBtn.connect("clicked", () => this._closeSearch());
+        this.searchBox.add_actor(this.searchCloseBtn);
+
+        this.searchEntry.clutter_text.connect("text-changed", () => {
+            this._onSearchQueryChanged();
+        });
+
+        // Scroll view for events (with subtle top/bottom fade effect)
         this.scrollView = new St.ScrollView({
-            style_class: "bri3fing-scroll-view",
+            style_class: "bri3fing-scroll-view vfade",
             hscrollbar_policy: St.PolicyType.NEVER,
             vscrollbar_policy: St.PolicyType.AUTOMATIC
         });
@@ -203,6 +274,130 @@ Bri3fingDesklet.prototype = {
             _("July"), _("August"), _("September"), _("October"), _("November"), _("December")
         ];
         return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    },
+
+    _openCalendarApp: function() {
+        try {
+            Util.spawnCommandLine("gnome-calendar");
+        } catch (e) {
+            try {
+                Util.spawnCommandLine("evolution -c calendar");
+            } catch (e2) {
+                Main.notifyError(_("Bri3fing"), _("Could not launch calendar application"));
+            }
+        }
+    },
+
+    _toggleSearch: function() {
+        let isVis = !this.searchBox.visible;
+        this.searchBox.visible = isVis;
+        if (isVis) {
+            this.searchBtn.add_style_class_name("bri3fing-action-button-active");
+            this.searchEntry.clutter_text.grab_key_focus();
+        } else {
+            this.searchBtn.remove_style_class_name("bri3fing-action-button-active");
+            this.searchEntry.set_text("");
+            this._searchQuery = "";
+            this._renderSchedule({ events: this._events, calendars: this._calendars });
+        }
+        this._updateDynamicHeight();
+    },
+
+    _closeSearch: function() {
+        this.searchBox.visible = false;
+        this.searchBtn.remove_style_class_name("bri3fing-action-button-active");
+        this.searchEntry.set_text("");
+        this._searchQuery = "";
+        this._renderSchedule({ events: this._events, calendars: this._calendars });
+        this._updateDynamicHeight();
+    },
+
+    _onSearchQueryChanged: function() {
+        this._searchQuery = (this.searchEntry.get_text() || "").trim();
+        this._renderSchedule({ events: this._events, calendars: this._calendars });
+    },
+
+    _extractMeetingUrl: function(ev) {
+        let text = `${ev.location || ""} ${ev.description || ""}`;
+        let match = text.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)?(?:meet\.google\.com|zoom\.us|teams\.microsoft\.com|teams\.live\.com|meet\.jit\.si|webex\.com)[^\s"'>)]+/i);
+        return match ? match[0] : null;
+    },
+
+    _parseHiddenCalendars: function() {
+        this._hiddenCalendarUids = new Set();
+        if (this.hiddenCalendarsStr) {
+            let parts = this.hiddenCalendarsStr.split(",");
+            for (let p of parts) {
+                let trimmed = p.trim();
+                if (trimmed) this._hiddenCalendarUids.add(trimmed);
+            }
+        }
+    },
+
+    _updateCalendarsContextMenu: function(calendars) {
+        if (!calendars || calendars.length === 0) return;
+
+        if (this._calendarsSubmenu) {
+            this._calendarsSubmenu.destroy();
+            this._calendarsSubmenu = null;
+        }
+
+        this._calendarsSubmenu = new PopupMenu.PopupSubMenuMenuItem(_("Visible Calendars"));
+
+        for (let cal of calendars) {
+            let isVisible = !this._hiddenCalendarUids.has(cal.uid);
+            let item = new PopupMenu.PopupSwitchMenuItem(cal.name, isVisible);
+            item.connect("toggled", (sw, state) => {
+                if (state) {
+                    this._hiddenCalendarUids.delete(cal.uid);
+                } else {
+                    this._hiddenCalendarUids.add(cal.uid);
+                }
+                let val = Array.from(this._hiddenCalendarUids).join(",");
+                this.settings.setValue("hidden-calendars", val);
+                this._renderSchedule({ events: this._events, calendars: this._calendars });
+            });
+            this._calendarsSubmenu.menu.addMenuItem(item);
+        }
+
+        this._menu.addMenuItem(this._calendarsSubmenu, 2);
+    },
+
+    _checkImminentEventNotifications: function(events) {
+        if (this.notifyImminentEvents === false) return;
+        if (!events || events.length === 0) return;
+
+        let nowSec = Math.floor(Date.now() / 1000);
+        let leadSec = (this.notifyLeadTime || 10) * 60;
+
+        for (let ev of events) {
+            if (ev.all_day) continue;
+            if (!ev.start_ts) continue;
+            if (this._hiddenCalendarUids.has(ev.calendar_uid)) continue;
+
+            let diff = ev.start_ts - nowSec;
+            if (diff > -60 && diff <= leadSec) {
+                let eventKey = `${ev.uid || ev.summary}_${ev.start_ts}`;
+                if (!this._notifiedEventIds.has(eventKey)) {
+                    this._notifiedEventIds.add(eventKey);
+
+                    let title = _("Upcoming Event: %s").replace("%s", ev.summary || _("Event"));
+                    let sTime = ev.start_time_str ? this._formatTime(ev.start_time_str) : "";
+                    let minutesLeft = Math.max(1, Math.round(diff / 60));
+                    let body = "";
+                    if (diff <= 60) {
+                        body = _("Starting now at %s").replace("%s", sTime);
+                    } else {
+                        body = _("Starts in %d min (%s)").replace("%d", String(minutesLeft)).replace("%s", sTime);
+                    }
+                    if (ev.location) {
+                        body += ` • 📍 ${ev.location}`;
+                    }
+
+                    Main.notify(title, body);
+                }
+            }
+        }
     },
 
     _applyCustomStyle: function() {
@@ -422,6 +617,8 @@ Bri3fingDesklet.prototype = {
                     if (data.status === "success") {
                         this._calendars = data.calendars || [];
                         this._events = data.events || [];
+                        this._updateCalendarsContextMenu(this._calendars);
+                        this._checkImminentEventNotifications(this._events);
                         this._renderSchedule(data);
 
                         let now = new Date();
@@ -429,7 +626,8 @@ Bri3fingDesklet.prototype = {
                         let mins = String(now.getMinutes()).padStart(2, "0");
                         let updatedText = _("Updated at %s").replace("%s", `${hours}:${mins}`);
 
-                        let todayCount = this._events.filter(e => e.day_category === "today").length;
+                        let visibleEvents = this._events.filter(e => !this._hiddenCalendarUids.has(e.calendar_uid));
+                        let todayCount = visibleEvents.filter(e => e.day_category === "today").length;
                         if (todayCount === 1) {
                             this.subtitleLabel.set_text(`1 ${_("event today")} • ${updatedText}`);
                         } else if (todayCount > 1) {
@@ -454,8 +652,8 @@ Bri3fingDesklet.prototype = {
         this.scheduleBox.destroy_all_children();
         this.messageBox.destroy_all_children();
 
-        let events = data.events || [];
-        let calendars = data.calendars || [];
+        let rawEvents = (data && data.events) ? data.events : (this._events || []);
+        let calendars = (data && data.calendars) ? data.calendars : (this._calendars || []);
 
         if (calendars.length === 0) {
             this.scrollView.hide();
@@ -465,10 +663,29 @@ Bri3fingDesklet.prototype = {
             return;
         }
 
+        // Filter out hidden calendars
+        let events = rawEvents.filter(ev => !this._hiddenCalendarUids.has(ev.calendar_uid));
+
+        // Filter by active search query
+        let query = (this._searchQuery || "").trim().toLowerCase();
+        if (query) {
+            events = events.filter(ev => {
+                let s = (ev.summary || "").toLowerCase();
+                let l = (ev.location || "").toLowerCase();
+                let d = (ev.description || "").toLowerCase();
+                let c = (ev.calendar_name || "").toLowerCase();
+                return s.includes(query) || l.includes(query) || d.includes(query) || c.includes(query);
+            });
+        }
+
         if (events.length === 0) {
             this.scrollView.hide();
             this.messageBox.show();
-            this._renderEmptySchedule();
+            if (query) {
+                this._renderNoSearchResultsCard(this._searchQuery);
+            } else {
+                this._renderEmptySchedule();
+            }
             this._updateDynamicHeight();
             return;
         }
@@ -650,6 +867,37 @@ Bri3fingDesklet.prototype = {
             metaBox.add_actor(calTag);
         }
 
+        // Video meeting link detection (Meet, Zoom, Teams, Webex, Jitsi)
+        let meetingUrl = this._extractMeetingUrl(ev);
+        if (meetingUrl) {
+            let joinBtn = new St.Button({
+                style_class: "bri3fing-join-button",
+                reactive: true,
+                can_focus: true
+            });
+            let joinBox = new St.BoxLayout({
+                vertical: false,
+                style: "spacing: 3px;"
+            });
+            let joinIcon = new St.Icon({
+                icon_name: "camera-video-symbolic",
+                icon_size: 11
+            });
+            let joinLabel = new St.Label({
+                text: _("Join"),
+                style_class: "bri3fing-join-label"
+            });
+            joinBox.add_actor(joinIcon);
+            joinBox.add_actor(joinLabel);
+            joinBtn.set_child(joinBox);
+            new Tooltips.Tooltip(joinBtn, _("Join Video Call (%s)").replace("%s", meetingUrl));
+            joinBtn.connect("clicked", () => {
+                Util.spawnCommandLine(`xdg-open ${GLib.shell_quote(meetingUrl)}`);
+                return Clutter.EVENT_STOP;
+            });
+            row.add_actor(joinBtn);
+        }
+
         // Status badge (NOW / SOON)
         if (ev.is_ongoing) {
             let nowBadge = new St.Label({
@@ -733,6 +981,21 @@ Bri3fingDesklet.prototype = {
             descLbl.clutter_text.set_line_wrap(true);
             descLbl.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD);
             detailsBox.add_actor(descLbl);
+        }
+
+        // Video meeting link in details dialog
+        let meetingUrl = this._extractMeetingUrl(ev);
+        if (meetingUrl) {
+            let joinBtn = new St.Button({
+                style_class: "bri3fing-primary-button",
+                label: `📹 ${_("Join Video Call")}`,
+                reactive: true
+            });
+            joinBtn.connect("clicked", () => {
+                Util.spawnCommandLine(`xdg-open ${GLib.shell_quote(meetingUrl)}`);
+                dlg.close();
+            });
+            detailsBox.add_actor(joinBtn);
         }
 
         dlg.setButtons([
@@ -850,6 +1113,43 @@ Bri3fingDesklet.prototype = {
         });
         addBtn.connect("clicked", () => this._showAddEventDialog());
         card.add_actor(addBtn);
+
+        this.messageBox.add_actor(card);
+    },
+
+    _renderNoSearchResultsCard: function(query) {
+        let card = new St.BoxLayout({
+            vertical: true,
+            style_class: "bri3fing-card-empty"
+        });
+
+        let icon = new St.Icon({
+            icon_name: "edit-find-symbolic",
+            icon_size: 28,
+            style_class: "bri3fing-card-icon"
+        });
+        card.add_actor(icon);
+
+        let title = new St.Label({
+            text: _("No matching events"),
+            style_class: "bri3fing-card-title"
+        });
+        card.add_actor(title);
+
+        let desc = new St.Label({
+            text: _("No events found matching \"%s\"").replace("%s", query || ""),
+            style_class: "bri3fing-card-desc"
+        });
+        desc.clutter_text.set_line_wrap(true);
+        desc.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD);
+        card.add_actor(desc);
+
+        let clearBtn = new St.Button({
+            label: _("Clear Search"),
+            style_class: "bri3fing-secondary-button"
+        });
+        clearBtn.connect("clicked", () => this._closeSearch());
+        card.add_actor(clearBtn);
 
         this.messageBox.add_actor(card);
     },
