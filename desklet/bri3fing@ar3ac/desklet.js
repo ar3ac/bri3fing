@@ -57,6 +57,11 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-size", "fontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "header-font-size", "headerFontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "compact-mode", "compactMode", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "custom-colors", "customColors", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "section-color", "sectionColor", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "title-color", "titleColor", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "time-color", "timeColor", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "calendar-tag-color", "calendarTagColor", this._onStyleChanged.bind(this));
 
         this._buildUI();
         this._applyCustomStyle();
@@ -217,7 +222,7 @@ Bri3fingDesklet.prototype = {
                 this.window.set_style(`background-color: rgba(18, 18, 20, ${alpha}); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40); padding: ${padding};`);
             }
 
-            this._reapplyFontStyles();
+            this._reapplyItemStyles();
             this._updateDynamicHeight();
         } catch (e) {}
     },
@@ -256,11 +261,17 @@ Bri3fingDesklet.prototype = {
         } catch (e) {}
     },
 
-    _reapplyFontStyles: function() {
+    _reapplyItemStyles: function() {
         let fontSize = this.fontSize || 9;
         let headerFontSize = this.headerFontSize || 11;
         let metaFontSize = Math.max(7, fontSize - 1.5);
         let sectionFontSize = Math.max(7, fontSize - 1.5);
+
+        let useCustom = this.customColors === true;
+        let sectionCol = (useCustom && this.sectionColor) ? this.sectionColor : null;
+        let titleCol = (useCustom && this.titleColor) ? this.titleColor : null;
+        let timeCol = (useCustom && this.timeColor) ? this.timeColor : null;
+        let calTagCol = (useCustom && this.calendarTagColor) ? this.calendarTagColor : null;
 
         if (this.dateLabel) {
             this.dateLabel.set_style(`font-size: ${headerFontSize}pt;`);
@@ -276,13 +287,24 @@ Bri3fingDesklet.prototype = {
                 let child = children[i];
                 if (!child) continue;
                 if (child._titleLabel) {
-                    child._titleLabel.set_style(`font-size: ${fontSize}pt;`);
+                    let st = `font-size: ${fontSize}pt;`;
+                    if (titleCol) st += ` color: ${titleCol};`;
+                    child._titleLabel.set_style(st);
                 }
                 if (child._timeLabel) {
-                    child._timeLabel.set_style(`font-size: ${metaFontSize}pt;`);
+                    let st = `font-size: ${metaFontSize}pt;`;
+                    if (timeCol) st += ` color: ${timeCol};`;
+                    child._timeLabel.set_style(st);
+                }
+                if (child._calendarTagLabel) {
+                    let st = `font-size: ${Math.max(6.5, metaFontSize - 0.5)}pt;`;
+                    if (calTagCol) st += ` color: ${calTagCol}; border-color: ${calTagCol};`;
+                    child._calendarTagLabel.set_style(st);
                 }
                 if (child._sectionTitleLabel) {
-                    child._sectionTitleLabel.set_style(`font-size: ${sectionFontSize}pt;`);
+                    let st = `font-size: ${sectionFontSize}pt;`;
+                    if (sectionCol) st += ` color: ${sectionCol};`;
+                    child._sectionTitleLabel.set_style(st);
                 }
                 if (child._sectionCountLabel) {
                     child._sectionCountLabel.set_style(`font-size: ${sectionFontSize}pt;`);
@@ -456,7 +478,7 @@ Bri3fingDesklet.prototype = {
             this._addSection(headerTitle, dayEvents);
         });
 
-        this._reapplyFontStyles();
+        this._reapplyItemStyles();
         this._updateDynamicHeight();
     },
 
@@ -607,9 +629,11 @@ Bri3fingDesklet.prototype = {
         // Calendar source tag
         if (ev.calendar_name) {
             let calTag = new St.Label({
-                text: ` • ${ev.calendar_name}`,
+                text: ev.calendar_name,
                 style_class: "bri3fing-meta-calendar"
             });
+            calTag.clutter_text.set_ellipsize(Pango.EllipsizeMode.END);
+            row._calendarTagLabel = calTag;
             metaBox.add_actor(calTag);
         }
 

@@ -118,6 +118,11 @@ Configure Bri3fing directly through Cinnamon Desklet Settings (*Right-click widg
 | **Font size** | Spinbutton | `9pt` | Text size for event titles (7–18pt) |
 | **Header font size** | Spinbutton | `11pt` | Text size for header date (8–20pt) |
 | **Compact mode** | Switch | `true` | Reduced padding and spacing for sleek Chronus density |
+| **Custom colors** | Switch | `false` | Enable custom color pickers for all schedule fields |
+| **Section color** | Colorchooser | `rgb(96,165,250)` | Section & day header accent color |
+| **Title color** | Colorchooser | `rgb(243,244,246)` | Event title text color |
+| **Time color** | Colorchooser | `rgb(209,213,219)` | Time & duration label color |
+| **Calendar tag color** | Colorchooser | `rgb(147,197,253)` | Calendar account tag color |
 
 ---
 

@@ -134,18 +134,24 @@
 
 .bri3fing-time-label {
     font-size: 7.5pt;
-    color: #d1d5db;
+    color: #e2e8f0;
     font-weight: 500;
 }
 
 .bri3fing-meta-subtext {
     font-size: 7.5pt;
-    color: #9ca3af;
+    color: #cbd5e1;
 }
 
 .bri3fing-meta-calendar {
-    font-size: 7.5pt;
-    color: #6b7280;
+    font-size: 7pt;
+    color: #93c5fd;
+    font-weight: 500;
+    background-color: rgba(147, 197, 253, 0.12);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 3px;
 }
 
 /* Status Badges */
