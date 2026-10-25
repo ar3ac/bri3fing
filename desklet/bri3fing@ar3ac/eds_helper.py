@@ -13,11 +13,25 @@ import datetime
 import time
 import uuid
 
-import gi
-gi.require_version('EDataServer', '1.2')
-gi.require_version('ECal', '2.0')
-gi.require_version('ICalGLib', '3.0')
-from gi.repository import EDataServer, ECal, ICalGLib
+try:
+    import gi
+    gi.require_version('EDataServer', '1.2')
+    gi.require_version('ECal', '2.0')
+    gi.require_version('ICalGLib', '3.0')
+    from gi.repository import EDataServer, ECal, ICalGLib
+except (ValueError, ImportError) as e:
+    err_payload = {
+        "status": "error",
+        "message": (
+            "Required Evolution Data Server libraries not found.\n"
+            "Install them via:\n"
+            "  • Ubuntu / Debian / Mint: sudo apt install gir1.2-ecal-2.0 gir1.2-edataserver-1.2\n"
+            "  • Fedora: sudo dnf install evolution-data-server\n"
+            "  • Arch Linux: sudo pacman -S evolution-data-server"
+        )
+    }
+    print(json.dumps(err_payload, indent=2))
+    sys.exit(1)
 
 
 def get_source_registry():
