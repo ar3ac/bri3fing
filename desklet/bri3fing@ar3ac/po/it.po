@@ -457,3 +457,34 @@ msgstr "Solo calendario locale"
 msgid "Connect Google…"
 msgstr "Collega Google…"
 
+msgid "Edit Event…"
+msgstr "Modifica Evento…"
+
+msgid "Edit Calendar Event"
+msgstr "Modifica Evento nel Calendario"
+
+msgid "Modify event details and sync changes with your calendar."
+msgstr "Modifica i dettagli dell'evento e sincronizza le modifiche col calendario."
+
+msgid "Save Changes"
+msgstr "Salva Modifiche"
+
+msgid "Updating event…"
+msgstr "Aggiornamento evento…"
+
+msgid "Event updated!"
+msgstr "Evento aggiornato!"
+
+msgid "Failed to update event"
+msgstr "Impossibile aggiornare l'evento"
+
+msgid "Description / Notes (optional):"
+msgstr "Descrizione / Note (opzionale):"
+
+msgid "e.g., Agenda, Zoom link, details"
+msgstr "es. Ordine del giorno, link Zoom, note"
+
+msgid "Default Calendar"
+msgstr "Calendario predefinito"
+
+

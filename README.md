@@ -17,8 +17,8 @@ Designed with a stealth, minimalist dark glass aesthetic that matches [`tasks-tw
 - **Desktop Notifications:** Native Cinnamon desktop alerts 10 or 15 minutes before upcoming events begin so you never miss an appointment.
 - **Calendar Visibility Filtering:** Quickly hide or show individual calendars directly from the right-click context menu (*Visible Calendars*) or settings.
 - **Visual Status Badges & Smooth Scroll:** Calendar color indicator strips, start/end time ranges, location tags, real-time badges (**NOW** / **SOON**), smooth edge fade (`vfade`), and a sleek 5px glass scrollbar.
-- **Quick Event Creation (`[+]`):** Add upcoming appointments directly from your desktop in seconds with automatic two-way background sync to Google Calendar.
-- **Interactive Event Inspection:** Click any event on the widget to view its full details (exact time, location, notes, video call links, calendar source) or delete it directly from your schedule.
+- **Quick Event Creation & In-Place Editing:** Add new appointments or click any existing event to inspect details, modify in place (`[ Edit Event… ]`), or delete directly from your desktop with instant two-way background sync to Google Calendar.
+- **Interactive Event Inspection:** Click any event on the widget to view its full details (exact time, location, notes, video call links, calendar source) or take action immediately.
 - **Offline First:** Cached locally in the system's Evolution Data Server database, ensuring your schedule is always visible even without internet connectivity.
 - **Native Internationalization (i18n):** Multilingual support out of the box with English (`en`) and Italian (`it`) translations.
 - **Fully Customizable:** Flexible Cinnamon settings for desklet width, stable default height, background opacity, font scaling, briefing range, and custom field color pickers.
@@ -99,6 +99,14 @@ Bri3fing includes a standalone backend helper interfacing directly with `Evoluti
     --summary "Public Holiday" \
     --date 2026-10-26 \
     --all-day
+
+# Edit an existing event
+./desklet/bri3fing@ar3ac/eds_helper.py edit \
+    --calendar system-calendar \
+    --uid <event-uid> \
+    --summary "Updated Sprint Retrospective" \
+    --start 15:30 \
+    --end 16:30
 
 # Delete an event
 ./desklet/bri3fing@ar3ac/eds_helper.py delete --calendar system-calendar --uid <event-uid>

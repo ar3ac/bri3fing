@@ -441,3 +441,72 @@
     font-weight: bold;
     font-size: 8.5pt;
 }
+
+/* Calendar Dropdown Selector */
+.bri3fing-dropdown-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #f3f4f6;
+    transition-duration: 120ms;
+}
+
+.bri3fing-dropdown-btn:hover, .bri3fing-dropdown-btn:focus {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(96, 165, 250, 0.70);
+}
+
+.bri3fing-dropdown-btn-label {
+    color: #f8fafc;
+    font-size: 9pt;
+    font-weight: 500;
+}
+
+.bri3fing-dropdown-btn-arrow {
+    color: #94a3b8;
+    font-size: 8pt;
+    font-weight: bold;
+}
+
+.bri3fing-dropdown-options-scroll {
+    background-color: #1a1a20;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    margin-top: 3px;
+    padding: 3px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+.bri3fing-dropdown-options-box {
+    spacing: 2px;
+}
+
+.bri3fing-dropdown-item {
+    border-radius: 4px;
+    padding: 5px 8px;
+    color: #cbd5e1;
+    transition-duration: 100ms;
+}
+
+.bri3fing-dropdown-item:hover, .bri3fing-dropdown-item:focus {
+    background-color: rgba(59, 130, 246, 0.28);
+    color: #ffffff;
+}
+
+.bri3fing-dropdown-item-selected {
+    background-color: rgba(59, 130, 246, 0.38);
+    font-weight: 600;
+}
+
+.bri3fing-dropdown-item-label {
+    color: #f1f5f9;
+    font-size: 8.5pt;
+}
+
+.bri3fing-dropdown-item-check {
+    color: #60a5fa;
+    font-weight: bold;
+    font-size: 9pt;
+}
+

@@ -455,3 +455,34 @@ msgstr "Local calendar only"
 msgid "Connect Google…"
 msgstr "Connect Google…"
 
+msgid "Edit Event…"
+msgstr "Edit Event…"
+
+msgid "Edit Calendar Event"
+msgstr "Edit Calendar Event"
+
+msgid "Modify event details and sync changes with your calendar."
+msgstr "Modify event details and sync changes with your calendar."
+
+msgid "Save Changes"
+msgstr "Save Changes"
+
+msgid "Updating event…"
+msgstr "Updating event…"
+
+msgid "Event updated!"
+msgstr "Event updated!"
+
+msgid "Failed to update event"
+msgstr "Failed to update event"
+
+msgid "Description / Notes (optional):"
+msgstr "Description / Notes (optional):"
+
+msgid "e.g., Agenda, Zoom link, details"
+msgstr "e.g., Agenda, Zoom link, details"
+
+msgid "Default Calendar"
+msgstr "Default Calendar"
+
+

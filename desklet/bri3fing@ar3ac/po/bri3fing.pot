@@ -456,3 +456,34 @@ msgstr ""
 msgid "Connect Google…"
 msgstr ""
 
+msgid "Edit Event…"
+msgstr ""
+
+msgid "Edit Calendar Event"
+msgstr ""
+
+msgid "Modify event details and sync changes with your calendar."
+msgstr ""
+
+msgid "Save Changes"
+msgstr ""
+
+msgid "Updating event…"
+msgstr ""
+
+msgid "Event updated!"
+msgstr ""
+
+msgid "Failed to update event"
+msgstr ""
+
+msgid "Description / Notes (optional):"
+msgstr ""
+
+msgid "e.g., Agenda, Zoom link, details"
+msgstr ""
+
+msgid "Default Calendar"
+msgstr ""
+
+

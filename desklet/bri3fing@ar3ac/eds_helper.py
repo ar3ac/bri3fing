@@ -248,6 +248,65 @@ def get_events(days_ahead=7, include_past_today=False, target_calendar_uids=None
     }
 
 
+def _apply_event_times_and_dates(ical_comp, date_str=None, start_time_str=None, end_time_str=None, all_day=False):
+    """Configures DTSTART and DTEND on an iCal component for all-day or timed events."""
+    if not date_str:
+        target_date = datetime.date.today()
+    else:
+        try:
+            target_date = datetime.date.fromisoformat(date_str.strip())
+        except Exception:
+            target_date = datetime.date.today()
+
+    if all_day:
+        t_start = ICalGLib.Time.new_null_time()
+        t_start.set_date(target_date.year, target_date.month, target_date.day)
+        t_start.set_is_date(True)
+
+        next_date = target_date + datetime.timedelta(days=1)
+        t_end = ICalGLib.Time.new_null_time()
+        t_end.set_date(next_date.year, next_date.month, next_date.day)
+        t_end.set_is_date(True)
+
+        ical_comp.set_dtstart(t_start)
+        ical_comp.set_dtend(t_end)
+    else:
+        now_dt = datetime.datetime.now()
+        if not start_time_str or not start_time_str.strip():
+            default_start = (now_dt + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+            start_hour, start_minute = default_start.hour, default_start.minute
+        else:
+            parts = start_time_str.strip().split(":")
+            start_hour = int(parts[0].strip())
+            start_minute = int(parts[1].strip()) if len(parts) > 1 else 0
+
+        if not end_time_str or not end_time_str.strip():
+            end_hour = (start_hour + 1) % 24
+            end_minute = start_minute
+            end_date = target_date + datetime.timedelta(days=1 if start_hour == 23 else 0)
+        else:
+            parts = end_time_str.strip().split(":")
+            end_hour = int(parts[0].strip())
+            end_minute = int(parts[1].strip()) if len(parts) > 1 else 0
+            if end_hour < start_hour or (end_hour == start_hour and end_minute < start_minute):
+                end_date = target_date + datetime.timedelta(days=1)
+            else:
+                end_date = target_date
+
+        start_dt = datetime.datetime(target_date.year, target_date.month, target_date.day, start_hour, start_minute)
+        end_dt = datetime.datetime(end_date.year, end_date.month, end_date.day, end_hour, end_minute)
+
+        start_ts = int(start_dt.timestamp())
+        end_ts = int(end_dt.timestamp())
+
+        utc_zone = ICalGLib.Timezone.get_utc_timezone()
+        t_start = ICalGLib.Time.new_from_timet_with_zone(start_ts, 0, utc_zone)
+        t_end = ICalGLib.Time.new_from_timet_with_zone(end_ts, 0, utc_zone)
+
+        ical_comp.set_dtstart(t_start)
+        ical_comp.set_dtend(t_end)
+
+
 def add_event(calendar_uid, summary, date_str=None, start_time_str=None, end_time_str=None, all_day=False, location=None, description=None):
     """
     Creates a new VEVENT component and inserts it into the specified calendar source.
@@ -290,63 +349,7 @@ def add_event(calendar_uid, summary, date_str=None, start_time_str=None, end_tim
     if description:
         ical_comp.set_description(description.strip())
 
-    # Date handling
-    if not date_str:
-        target_date = datetime.date.today()
-    else:
-        try:
-            target_date = datetime.date.fromisoformat(date_str.strip())
-        except Exception:
-            target_date = datetime.date.today()
-
-    if all_day:
-        t_start = ICalGLib.Time.new_null_time()
-        t_start.set_date(target_date.year, target_date.month, target_date.day)
-        t_start.set_is_date(True)
-
-        next_date = target_date + datetime.timedelta(days=1)
-        t_end = ICalGLib.Time.new_null_time()
-        t_end.set_date(next_date.year, next_date.month, next_date.day)
-        t_end.set_is_date(True)
-
-        ical_comp.set_dtstart(t_start)
-        ical_comp.set_dtend(t_end)
-    else:
-        now_dt = datetime.datetime.now()
-        if not start_time_str or not start_time_str.strip():
-            default_start = (now_dt + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-            start_hour, start_minute = default_start.hour, default_start.minute
-        else:
-            parts = start_time_str.strip().split(":")
-            start_hour = int(parts[0].strip())
-            start_minute = int(parts[1].strip()) if len(parts) > 1 else 0
-
-        if not end_time_str or not end_time_str.strip():
-            end_hour = (start_hour + 1) % 24
-            end_minute = start_minute
-            end_date = target_date + datetime.timedelta(days=1 if start_hour == 23 else 0)
-        else:
-            parts = end_time_str.strip().split(":")
-            end_hour = int(parts[0].strip())
-            end_minute = int(parts[1].strip()) if len(parts) > 1 else 0
-            # If end time is earlier than start time, assume event ends next day
-            if end_hour < start_hour or (end_hour == start_hour and end_minute < start_minute):
-                end_date = target_date + datetime.timedelta(days=1)
-            else:
-                end_date = target_date
-
-        start_dt = datetime.datetime(target_date.year, target_date.month, target_date.day, start_hour, start_minute)
-        end_dt = datetime.datetime(end_date.year, end_date.month, end_date.day, end_hour, end_minute)
-
-        start_ts = int(start_dt.timestamp())
-        end_ts = int(end_dt.timestamp())
-
-        utc_zone = ICalGLib.Timezone.get_utc_timezone()
-        t_start = ICalGLib.Time.new_from_timet_with_zone(start_ts, 0, utc_zone)
-        t_end = ICalGLib.Time.new_from_timet_with_zone(end_ts, 0, utc_zone)
-
-        ical_comp.set_dtstart(t_start)
-        ical_comp.set_dtend(t_end)
+    _apply_event_times_and_dates(ical_comp, date_str, start_time_str, end_time_str, all_day)
 
     comp = ECal.Component.new_from_icalcomponent(ical_comp)
     try:
@@ -360,6 +363,69 @@ def add_event(calendar_uid, summary, date_str=None, start_time_str=None, end_tim
         }
     except Exception as e:
         return {"status": "error", "message": f"Failed to save event: {str(e)}"}
+
+
+def edit_event(calendar_uid, event_uid, new_calendar_uid=None, summary=None, date_str=None, start_time_str=None, end_time_str=None, all_day=False, location=None, description=None):
+    """
+    Modifies an existing VEVENT component in EDS.
+    If new_calendar_uid is specified and differs from calendar_uid, the event is moved.
+    """
+    registry = get_source_registry()
+    source = registry.ref_source(calendar_uid)
+    if not source:
+        return {"status": "error", "message": f"Calendar {calendar_uid} not found"}
+
+    try:
+        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 5, None)
+        success, ical_comp = client.get_object_sync(event_uid, None, None)
+        if not success or not ical_comp:
+            return {"status": "error", "message": f"Event {event_uid} not found"}
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to retrieve event: {str(e)}"}
+
+    if summary is not None:
+        ical_comp.set_summary(summary.strip() or "Untitled Event")
+    if location is not None:
+        ical_comp.set_location(location.strip())
+    if description is not None:
+        ical_comp.set_description(description.strip())
+
+    _apply_event_times_and_dates(ical_comp, date_str, start_time_str, end_time_str, all_day)
+
+    try:
+        seq = ical_comp.get_sequence()
+        ical_comp.set_sequence(seq + 1)
+    except Exception:
+        pass
+
+    # Moving to a different calendar if requested
+    if new_calendar_uid and new_calendar_uid != calendar_uid:
+        new_source = registry.ref_source(new_calendar_uid)
+        if not new_source:
+            return {"status": "error", "message": f"Target calendar {new_calendar_uid} not found"}
+        try:
+            new_client = ECal.Client.connect_sync(new_source, ECal.ClientSourceType.EVENTS, 5, None)
+            new_client.create_object_sync(ical_comp, ECal.OperationFlags.NONE, None)
+            client.remove_object_sync(event_uid, None, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, None)
+            return {
+                "status": "success",
+                "uid": event_uid,
+                "calendar_uid": new_calendar_uid,
+                "message": "Event moved and updated successfully"
+            }
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to move event: {str(e)}"}
+    else:
+        try:
+            client.modify_object_sync(ical_comp, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, None)
+            return {
+                "status": "success",
+                "uid": event_uid,
+                "calendar_uid": calendar_uid,
+                "message": "Event updated successfully"
+            }
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to update event: {str(e)}"}
 
 
 def delete_event(calendar_uid, event_uid, recurrence_id=None):
@@ -401,6 +467,19 @@ def main():
     add_parser.add_argument("--location", type=str, default="", help="Event location")
     add_parser.add_argument("--description", type=str, default="", help="Event description")
 
+    # Command: edit
+    edit_parser = subparsers.add_parser("edit", help="Edit an existing calendar event")
+    edit_parser.add_argument("--calendar", type=str, required=True, help="Current calendar source UID")
+    edit_parser.add_argument("--uid", type=str, required=True, help="Event UID to edit")
+    edit_parser.add_argument("--new-calendar", type=str, default="", help="Target calendar UID if moving")
+    edit_parser.add_argument("--summary", type=str, required=True, help="Event title/summary")
+    edit_parser.add_argument("--date", type=str, default="", help="Event date (YYYY-MM-DD)")
+    edit_parser.add_argument("--start", type=str, default="", help="Start time (HH:MM)")
+    edit_parser.add_argument("--end", type=str, default="", help="End time (HH:MM)")
+    edit_parser.add_argument("--all-day", action="store_true", help="Mark event as all day")
+    edit_parser.add_argument("--location", type=str, default="", help="Event location")
+    edit_parser.add_argument("--description", type=str, default="", help="Event description")
+
     # Command: delete
     del_parser = subparsers.add_parser("delete", help="Delete a calendar event")
     del_parser.add_argument("--calendar", type=str, required=True, help="Calendar source UID")
@@ -424,6 +503,21 @@ def main():
     elif args.command == "add":
         result = add_event(
             calendar_uid=args.calendar,
+            summary=args.summary,
+            date_str=args.date,
+            start_time_str=args.start,
+            end_time_str=args.end,
+            all_day=args.all_day,
+            location=args.location,
+            description=args.description
+        )
+        print(json.dumps(result, indent=2))
+
+    elif args.command == "edit":
+        result = edit_event(
+            calendar_uid=args.calendar,
+            event_uid=args.uid,
+            new_calendar_uid=args.new_calendar,
             summary=args.summary,
             date_str=args.date,
             start_time_str=args.start,

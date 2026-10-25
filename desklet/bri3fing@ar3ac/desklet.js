@@ -2,6 +2,7 @@ const Desklet = imports.ui.desklet;
 const St = imports.gi.St;
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
+const Gtk = imports.gi.Gtk;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 const PopupMenu = imports.ui.popupMenu;
@@ -1053,6 +1054,13 @@ Bri3fingDesklet.prototype = {
 
         dlg.setButtons([
             {
+                label: _("Edit Event…"),
+                action: () => {
+                    dlg.close();
+                    this._showEditEventDialog(ev);
+                }
+            },
+            {
                 label: _("Delete Event"),
                 action: () => {
                     dlg.close();
@@ -1260,11 +1268,25 @@ Bri3fingDesklet.prototype = {
     },
 
     _showAddEventDialog: function() {
+        this._showEventFormDialog({ mode: "create" });
+    },
+
+    _showEditEventDialog: function(ev) {
+        this._showEventFormDialog({ mode: "edit", event: ev });
+    },
+
+    _showEventFormDialog: function(options) {
+        let mode = (options && options.mode) || "create";
+        let isEdit = (mode === "edit" && options.event);
+        let event = options.event || {};
+
         let dlg = new ModalDialog.ModalDialog();
 
         let content = new Dialog.MessageDialogContent({
-            title: _("New Calendar Event"),
-            description: _("Create an event synced automatically with your calendar account.")
+            title: isEdit ? _("Edit Calendar Event") : _("New Calendar Event"),
+            description: isEdit
+                ? _("Modify event details and sync changes with your calendar.")
+                : _("Create an event synced automatically with your calendar account.")
         });
         dlg.contentLayout.add_child(content);
 
@@ -1284,40 +1306,144 @@ Bri3fingDesklet.prototype = {
             style_class: "run-dialog-entry",
             can_focus: true
         });
-        titleEntry.set_width(400);
+        titleEntry.set_width(420);
+        if (isEdit && event.summary) {
+            titleEntry.set_text(event.summary);
+        }
         formBox.add_actor(titleEntry);
 
-        // 2. Calendar Selector (if multiple available)
-        let selectedCalendarUid = "";
+        // 2. Calendar Selector (Clean Dropdown)
         let writableCalendars = this._calendars.filter(c => c.writable !== false);
+        if (writableCalendars.length === 0) writableCalendars = this._calendars;
+
+        let selectedCalendarUid = "";
+        if (isEdit && event.calendar_uid) {
+            selectedCalendarUid = event.calendar_uid;
+        } else if (this.defaultCalendarUid && writableCalendars.some(c => c.uid === this.defaultCalendarUid)) {
+            selectedCalendarUid = this.defaultCalendarUid;
+        } else {
+            let onlineCal = writableCalendars.find(c => c.is_online);
+            selectedCalendarUid = onlineCal ? onlineCal.uid : (writableCalendars[0] ? writableCalendars[0].uid : "");
+        }
+
+        let curCal = writableCalendars.find(c => c.uid === selectedCalendarUid) || writableCalendars[0];
+        if (curCal) selectedCalendarUid = curCal.uid;
 
         if (writableCalendars.length > 0) {
-            let defCal = writableCalendars.find(c => c.uid === this.defaultCalendarUid) ||
-                         writableCalendars.find(c => c.is_online) ||
-                         writableCalendars[0];
-            selectedCalendarUid = defCal ? defCal.uid : writableCalendars[0].uid;
-
-            let calHeaderBox = new St.BoxLayout({ vertical: false, style: "spacing: 8px;" });
+            let calContainer = new St.BoxLayout({ vertical: true, style: "spacing: 4px;" });
             let calLabel = new St.Label({ text: _("Calendar:"), style_class: "bri3fing-dialog-label" });
-            calHeaderBox.add_actor(calLabel);
+            calContainer.add_actor(calLabel);
 
-            let calButtonsBox = new St.BoxLayout({ vertical: false, style: "spacing: 6px;" });
-            writableCalendars.forEach(c => {
-                let calBtn = new St.Button({
-                    label: c.name,
-                    style_class: (c.uid === selectedCalendarUid) ? "bri3fing-pill-btn-active" : "bri3fing-pill-btn"
-                });
-                calBtn.connect("clicked", () => {
-                    selectedCalendarUid = c.uid;
-                    calButtonsBox.get_children().forEach(btn => {
-                        btn.style_class = "bri3fing-pill-btn";
-                    });
-                    calBtn.style_class = "bri3fing-pill-btn-active";
-                });
-                calButtonsBox.add_actor(calBtn);
+            let dropdownBtn = new St.Button({
+                style_class: "bri3fing-dropdown-btn",
+                reactive: true,
+                can_focus: true
             });
-            formBox.add_actor(calHeaderBox);
-            formBox.add_actor(calButtonsBox);
+            dropdownBtn.set_width(420);
+
+            let dropdownBtnBox = new St.BoxLayout({
+                vertical: false,
+                style: "spacing: 8px; y-align: center;"
+            });
+            dropdownBtn.set_child(dropdownBtnBox);
+
+            let curColorDot = new St.Label({
+                text: "⬤",
+                style: `color: ${curCal ? curCal.color : "#3b82f6"}; font-size: 8.5pt; margin-top: 1px;`
+            });
+            dropdownBtnBox.add_actor(curColorDot);
+
+            let curCalName = new St.Label({
+                text: curCal ? curCal.name : _("Default Calendar"),
+                style_class: "bri3fing-dropdown-btn-label",
+                x_expand: true
+            });
+            dropdownBtnBox.add_actor(curCalName);
+
+            let arrowIcon = new St.Label({
+                text: "▾",
+                style_class: "bri3fing-dropdown-btn-arrow"
+            });
+            dropdownBtnBox.add_actor(arrowIcon);
+
+            calContainer.add_actor(dropdownBtn);
+
+            let optionsScroll = new St.ScrollView({
+                style_class: "bri3fing-dropdown-options-scroll",
+                visible: false,
+                hscrollbar_policy: Gtk.PolicyType.NEVER,
+                vscrollbar_policy: Gtk.PolicyType.AUTOMATIC
+            });
+            optionsScroll.set_width(420);
+            optionsScroll.set_height(Math.min(writableCalendars.length * 34, 140));
+
+            let optionsBox = new St.BoxLayout({
+                vertical: true,
+                style_class: "bri3fing-dropdown-options-box"
+            });
+            optionsScroll.add_actor(optionsBox);
+
+            let optionItems = [];
+
+            writableCalendars.forEach(c => {
+                let itemBtn = new St.Button({
+                    style_class: (c.uid === selectedCalendarUid) ? "bri3fing-dropdown-item bri3fing-dropdown-item-selected" : "bri3fing-dropdown-item",
+                    reactive: true,
+                    can_focus: true
+                });
+                let itemBox = new St.BoxLayout({
+                    vertical: false,
+                    style: "spacing: 8px; y-align: center; padding: 4px 6px;"
+                });
+                itemBtn.set_child(itemBox);
+
+                let dot = new St.Label({
+                    text: "⬤",
+                    style: `color: ${c.color || "#3b82f6"}; font-size: 8.5pt;`
+                });
+                itemBox.add_actor(dot);
+
+                let name = new St.Label({
+                    text: c.name,
+                    style_class: "bri3fing-dropdown-item-label",
+                    x_expand: true
+                });
+                itemBox.add_actor(name);
+
+                let check = new St.Label({
+                    text: (c.uid === selectedCalendarUid) ? "✓" : "",
+                    style_class: "bri3fing-dropdown-item-check"
+                });
+                itemBox.add_actor(check);
+
+                itemBtn.connect("clicked", () => {
+                    selectedCalendarUid = c.uid;
+                    curCalName.set_text(c.name);
+                    curColorDot.set_style(`color: ${c.color || "#3b82f6"}; font-size: 8.5pt; margin-top: 1px;`);
+
+                    optionItems.forEach(opt => {
+                        opt.btn.style_class = (opt.uid === selectedCalendarUid)
+                            ? "bri3fing-dropdown-item bri3fing-dropdown-item-selected"
+                            : "bri3fing-dropdown-item";
+                        opt.check.set_text((opt.uid === selectedCalendarUid) ? "✓" : "");
+                    });
+
+                    optionsScroll.visible = false;
+                    arrowIcon.set_text("▾");
+                });
+
+                optionItems.push({ uid: c.uid, btn: itemBtn, check: check });
+                optionsBox.add_actor(itemBtn);
+            });
+
+            dropdownBtn.connect("clicked", () => {
+                let isVis = !optionsScroll.visible;
+                optionsScroll.visible = isVis;
+                arrowIcon.set_text(isVis ? "▴" : "▾");
+            });
+
+            calContainer.add_actor(optionsScroll);
+            formBox.add_actor(calContainer);
         }
 
         // 3. Date & Time Box
@@ -1328,6 +1454,11 @@ Bri3fingDesklet.prototype = {
         let defaultStart = `${String(nextHour).padStart(2, "0")}:00`;
         let defaultEnd = `${String((nextHour + 1) % 24).padStart(2, "0")}:00`;
 
+        let initialDate = (isEdit && event.date_str) ? event.date_str : todayIso;
+        let initialStart = (isEdit && event.start_time_str) ? event.start_time_str : defaultStart;
+        let initialEnd = (isEdit && event.end_time_str) ? event.end_time_str : defaultEnd;
+        let isAllDay = (isEdit && event.all_day === true);
+
         let dateTimeRow = new St.BoxLayout({ vertical: false, style: "spacing: 12px;" });
         formBox.add_actor(dateTimeRow);
 
@@ -1335,7 +1466,7 @@ Bri3fingDesklet.prototype = {
         let dateBox = new St.BoxLayout({ vertical: true, style: "spacing: 4px;" });
         let dateLabel = new St.Label({ text: _("Date (YYYY-MM-DD):"), style_class: "bri3fing-dialog-label" });
         let dateEntry = new St.Entry({
-            text: todayIso,
+            text: initialDate,
             style_class: "run-dialog-entry",
             can_focus: true
         });
@@ -1348,11 +1479,11 @@ Bri3fingDesklet.prototype = {
         let startBox = new St.BoxLayout({ vertical: true, style: "spacing: 4px;" });
         let startLabel = new St.Label({ text: _("Start Time:"), style_class: "bri3fing-dialog-label" });
         let startEntry = new St.Entry({
-            text: defaultStart,
+            text: initialStart,
             style_class: "run-dialog-entry",
             can_focus: true
         });
-        startEntry.set_width(110);
+        startEntry.set_width(120);
         startBox.add_actor(startLabel);
         startBox.add_actor(startEntry);
         dateTimeRow.add_actor(startBox);
@@ -1361,22 +1492,27 @@ Bri3fingDesklet.prototype = {
         let endBox = new St.BoxLayout({ vertical: true, style: "spacing: 4px;" });
         let endLabel = new St.Label({ text: _("End Time:"), style_class: "bri3fing-dialog-label" });
         let endEntry = new St.Entry({
-            text: defaultEnd,
+            text: initialEnd,
             style_class: "run-dialog-entry",
             can_focus: true
         });
-        endEntry.set_width(110);
+        endEntry.set_width(120);
         endBox.add_actor(endLabel);
         endBox.add_actor(endEntry);
         dateTimeRow.add_actor(endBox);
 
         // All Day Toggle
-        let isAllDay = false;
         let allDayBtn = new St.Button({
-            label: `☐ ${_("All Day Event")}`,
-            style_class: "bri3fing-pill-btn",
+            label: isAllDay ? `☑ ${_("All Day Event")}` : `☐ ${_("All Day Event")}`,
+            style_class: isAllDay ? "bri3fing-pill-btn-active" : "bri3fing-pill-btn",
             style: "margin-top: 2px;"
         });
+        if (isAllDay) {
+            startEntry.set_reactive(false);
+            endEntry.set_reactive(false);
+            startEntry.set_opacity(120);
+            endEntry.set_opacity(120);
+        }
         allDayBtn.connect("clicked", () => {
             isAllDay = !isAllDay;
             if (isAllDay) {
@@ -1384,11 +1520,15 @@ Bri3fingDesklet.prototype = {
                 allDayBtn.style_class = "bri3fing-pill-btn-active";
                 startEntry.set_reactive(false);
                 endEntry.set_reactive(false);
+                startEntry.set_opacity(120);
+                endEntry.set_opacity(120);
             } else {
                 allDayBtn.set_label(`☐ ${_("All Day Event")}`);
                 allDayBtn.style_class = "bri3fing-pill-btn";
                 startEntry.set_reactive(true);
                 endEntry.set_reactive(true);
+                startEntry.set_opacity(255);
+                endEntry.set_opacity(255);
             }
         });
         formBox.add_actor(allDayBtn);
@@ -1402,8 +1542,26 @@ Bri3fingDesklet.prototype = {
             style_class: "run-dialog-entry",
             can_focus: true
         });
-        locEntry.set_width(400);
+        locEntry.set_width(420);
+        if (isEdit && event.location) {
+            locEntry.set_text(event.location);
+        }
         formBox.add_actor(locEntry);
+
+        // 5. Description / Notes Input
+        let descLabel = new St.Label({ text: _("Description / Notes (optional):"), style_class: "bri3fing-dialog-label" });
+        formBox.add_actor(descLabel);
+
+        let descEntry = new St.Entry({
+            hint_text: _("e.g., Agenda, Zoom link, details"),
+            style_class: "run-dialog-entry",
+            can_focus: true
+        });
+        descEntry.set_width(420);
+        if (isEdit && event.description) {
+            descEntry.set_text(event.description);
+        }
+        formBox.add_actor(descEntry);
 
         dlg.setInitialKeyFocus(titleEntry.clutter_text);
 
@@ -1415,44 +1573,85 @@ Bri3fingDesklet.prototype = {
             let startVal = startEntry.get_text().trim() || defaultStart;
             let endVal = endEntry.get_text().trim() || defaultEnd;
             let locVal = locEntry.get_text().trim();
+            let descVal = descEntry.get_text().trim();
 
             dlg.close();
 
-            if (this.subtitleLabel) {
-                this.subtitleLabel.set_text(_("Creating event…"));
-            }
-
-            let args = ["add", "--summary", summary, "--date", dateVal];
-            if (selectedCalendarUid) {
-                args.push("--calendar", selectedCalendarUid);
-            }
-            if (isAllDay) {
-                args.push("--all-day");
-            } else {
-                args.push("--start", startVal, "--end", endVal);
-            }
-            if (locVal) {
-                args.push("--location", locVal);
-            }
-
-            this._executeHelper(args, (success, stdout, stderr) => {
-                if (success) {
-                    if (this.subtitleLabel) {
-                        this.subtitleLabel.set_text(_("Event created!"));
-                    }
-                    Mainloop.timeout_add(400, () => {
-                        this.refresh();
-                        return false;
-                    });
-                } else {
-                    let errMsg = stderr || _("Failed to create event");
-                    try {
-                        let parsed = JSON.parse(stderr);
-                        if (parsed && parsed.message) errMsg = parsed.message;
-                    } catch (e) {}
-                    this._renderError(errMsg);
+            if (isEdit) {
+                if (this.subtitleLabel) {
+                    this.subtitleLabel.set_text(_("Updating event…"));
                 }
-            });
+                let args = [
+                    "edit",
+                    "--calendar", event.calendar_uid,
+                    "--uid", event.uid,
+                    "--summary", summary,
+                    "--date", dateVal
+                ];
+                if (selectedCalendarUid && selectedCalendarUid !== event.calendar_uid) {
+                    args.push("--new-calendar", selectedCalendarUid);
+                }
+                if (isAllDay) {
+                    args.push("--all-day");
+                } else {
+                    args.push("--start", startVal, "--end", endVal);
+                }
+                if (locVal) args.push("--location", locVal);
+                if (descVal) args.push("--description", descVal);
+
+                this._executeHelper(args, (success, stdout, stderr) => {
+                    if (success) {
+                        if (this.subtitleLabel) {
+                            this.subtitleLabel.set_text(_("Event updated!"));
+                        }
+                        Mainloop.timeout_add(400, () => {
+                            this.refresh();
+                            return false;
+                        });
+                    } else {
+                        let errMsg = stderr || _("Failed to update event");
+                        try {
+                            let parsed = JSON.parse(stderr);
+                            if (parsed && parsed.message) errMsg = parsed.message;
+                        } catch (e) {}
+                        this._renderError(errMsg);
+                    }
+                });
+            } else {
+                if (this.subtitleLabel) {
+                    this.subtitleLabel.set_text(_("Creating event…"));
+                }
+                let args = ["add", "--summary", summary, "--date", dateVal];
+                if (selectedCalendarUid) {
+                    args.push("--calendar", selectedCalendarUid);
+                }
+                if (isAllDay) {
+                    args.push("--all-day");
+                } else {
+                    args.push("--start", startVal, "--end", endVal);
+                }
+                if (locVal) args.push("--location", locVal);
+                if (descVal) args.push("--description", descVal);
+
+                this._executeHelper(args, (success, stdout, stderr) => {
+                    if (success) {
+                        if (this.subtitleLabel) {
+                            this.subtitleLabel.set_text(_("Event created!"));
+                        }
+                        Mainloop.timeout_add(400, () => {
+                            this.refresh();
+                            return false;
+                        });
+                    } else {
+                        let errMsg = stderr || _("Failed to create event");
+                        try {
+                            let parsed = JSON.parse(stderr);
+                            if (parsed && parsed.message) errMsg = parsed.message;
+                        } catch (e) {}
+                        this._renderError(errMsg);
+                    }
+                });
+            }
         };
 
         titleEntry.clutter_text.connect("activate", submit);
@@ -1464,7 +1663,7 @@ Bri3fingDesklet.prototype = {
                 key: Clutter.KEY_Escape
             },
             {
-                label: _("Create Event"),
+                label: isEdit ? _("Save Changes") : _("Create Event"),
                 action: submit,
                 default: true,
                 key: Clutter.KEY_Return
