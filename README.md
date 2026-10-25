@@ -6,7 +6,7 @@
 
 A sleek, native desktop agenda widget and event manager for the **Cinnamon Desktop Environment** (Linux Mint), seamlessly synchronized with **Google Calendar** (as well as Nextcloud, Microsoft 365, and generic CalDAV accounts).
 
-Designed with a stealth, minimalist dark glass aesthetic that matches [`tasks-tw`](https://github.com/ar3ac/tasks-tw) and [`book-radar`](https://github.com/ar3ac/book-radar).
+Designed with a stealth, minimalist dark glass aesthetic that blends seamlessly into any desktop setup.
 
 <p align="center">
   <img src="docs/screenshots/screenshot.png" alt="Bri3fing Desklet Preview" width="380" />

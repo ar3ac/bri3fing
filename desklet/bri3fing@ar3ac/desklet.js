@@ -991,6 +991,7 @@ Bri3fingDesklet.prototype = {
 
     _showEventDetailsDialog: function(ev) {
         let dlg = new ModalDialog.ModalDialog();
+        this._activeDialog = dlg;
 
         let headerMeta = [];
         if (ev.calendar_name) headerMeta.push(ev.calendar_name);
@@ -1281,6 +1282,7 @@ Bri3fingDesklet.prototype = {
         let event = options.event || {};
 
         let dlg = new ModalDialog.ModalDialog();
+        this._activeDialog = dlg;
 
         let content = new Dialog.MessageDialogContent({
             title: isEdit ? _("Edit Calendar Event") : _("New Calendar Event"),

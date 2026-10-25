@@ -16,3 +16,4 @@ rm -f "$HOME/.local/share/locale/en/LC_MESSAGES/$DESKLET_UUID.mo"
 echo "  ✓ Removed translation catalogs"
 
 echo "==> Uninstallation complete!"
+

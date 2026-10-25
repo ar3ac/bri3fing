@@ -17,3 +17,4 @@ zip -r "$ARCHIVE_PATH" "$DESKLET_UUID" -x "*.pyc" "*/__pycache__/*" "*~" "*.swp"
 
 echo "  ✓ Created release bundle: $ARCHIVE_PATH"
 echo "==> Package ready for GitHub Releases or Cinnamon Spices!"
+
