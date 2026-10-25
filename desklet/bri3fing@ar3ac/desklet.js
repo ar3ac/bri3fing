@@ -53,6 +53,7 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "transparent-background", "transparentBackground", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-opacity", "deskletOpacity", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-width", "deskletWidth", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "max-height", "maxHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-size", "fontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "compact-mode", "compactMode", this._onStyleChanged.bind(this));
 
@@ -226,9 +227,10 @@ Bri3fingDesklet.prototype = {
             let width = this.deskletWidth || 340;
             this.window.set_width(width);
 
+            let maxH = this.maxHeight || 520;
+
             if (this.scrollView && this.scheduleBox) {
                 let [, schedH] = this.scheduleBox.get_preferred_height(width);
-                let maxH = 460;
                 let targetScrollH = Math.min(schedH, maxH);
                 if (schedH > 0) {
                     this.scrollView.show();
@@ -349,7 +351,7 @@ Bri3fingDesklet.prototype = {
             this.subtitleLabel.set_text(_("Updating schedule…"));
         }
 
-        let days = this.daysAhead || 7;
+        let days = this.daysAhead || 14;
         let args = ["events", "--days", String(days)];
         if (this.showPastEvents) {
             args.push("--include-past");
@@ -417,36 +419,64 @@ Bri3fingDesklet.prototype = {
         this.messageBox.hide();
         this.scrollView.show();
 
-        // Group events: Today, Tomorrow, Upcoming
-        let todayEvents = [];
-        let tomorrowEvents = [];
-        let upcomingEvents = [];
-
+        // Chronus Android widget style: Group events day-by-day chronologically
+        let dateGroups = new Map();
         events.forEach(ev => {
-            if (ev.day_category === "today") {
-                todayEvents.push(ev);
-            } else if (ev.day_category === "tomorrow") {
-                tomorrowEvents.push(ev);
-            } else {
-                upcomingEvents.push(ev);
+            let key = ev.date_str || "upcoming";
+            if (!dateGroups.has(key)) {
+                dateGroups.set(key, []);
             }
+            dateGroups.get(key).push(ev);
         });
 
-        if (todayEvents.length > 0) {
-            this._addSection(_("Today"), todayEvents);
-        }
-        if (tomorrowEvents.length > 0) {
-            this._addSection(_("Tomorrow"), tomorrowEvents);
-        }
-        if (upcomingEvents.length > 0) {
-            this._addSection(_("Upcoming"), upcomingEvents, true);
-        }
+        dateGroups.forEach((dayEvents, dateStr) => {
+            let headerTitle = this._formatSectionHeaderDate(dateStr, dayEvents[0]);
+            this._addSection(headerTitle, dayEvents);
+        });
 
         this._reapplyFontStyles();
         this._updateDynamicHeight();
     },
 
-    _addSection: function(title, eventsList, showDateBadge) {
+    _formatSectionHeaderDate: function(dateStr, sampleEvent) {
+        if (!dateStr || dateStr === "upcoming") return _("Upcoming").toUpperCase();
+
+        let parts = dateStr.split("-");
+        if (parts.length !== 3) return dateStr;
+
+        let year = parseInt(parts[0], 10);
+        let month = parseInt(parts[1], 10) - 1;
+        let day = parseInt(parts[2], 10);
+        let d = new Date(year, month, day);
+
+        let shortDays = [_("Sun"), _("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat")];
+        let fullDays = [
+            _("Sunday"), _("Monday"), _("Tuesday"), _("Wednesday"),
+            _("Thursday"), _("Friday"), _("Saturday")
+        ];
+        let shortMonths = [
+            _("Jan"), _("Feb"), _("Mar"), _("Apr"), _("May"), _("Jun"),
+            _("Jul"), _("Aug"), _("Sep"), _("Oct"), _("Nov"), _("Dec")
+        ];
+
+        let dayIdx = d.getDay();
+        let monthIdx = d.getMonth();
+        let shortDay = shortDays[dayIdx] || "";
+        let fullDay = fullDays[dayIdx] || "";
+        let shortMonth = shortMonths[monthIdx] || "";
+
+        let dayCategory = sampleEvent ? sampleEvent.day_category : "";
+
+        if (dayCategory === "today") {
+            return `${_("Today").toUpperCase()} • ${shortDay} ${day} ${shortMonth}`;
+        } else if (dayCategory === "tomorrow") {
+            return `${_("Tomorrow").toUpperCase()} • ${shortDay} ${day} ${shortMonth}`;
+        } else {
+            return `${fullDay.toUpperCase()} • ${day} ${shortMonth}`;
+        }
+    },
+
+    _addSection: function(title, eventsList) {
         let headerBox = new St.BoxLayout({
             vertical: false,
             style_class: "bri3fing-section-header"
@@ -469,12 +499,12 @@ Bri3fingDesklet.prototype = {
         this.scheduleBox.add_actor(headerBox);
 
         eventsList.forEach(ev => {
-            let row = this._createEventRow(ev, showDateBadge);
+            let row = this._createEventRow(ev);
             this.scheduleBox.add_actor(row);
         });
     },
 
-    _createEventRow: function(ev, showDateBadge) {
+    _createEventRow: function(ev) {
         let row = new St.BoxLayout({
             vertical: false,
             style_class: "bri3fing-event-row",
@@ -530,13 +560,8 @@ Bri3fingDesklet.prototype = {
             timeStr = eTime ? `${sTime} – ${eTime}` : sTime;
         }
 
-        if (showDateBadge && ev.date_str) {
-            let dParts = ev.date_str.split("-");
-            if (dParts.length === 3) {
-                let d = new Date(parseInt(dParts[0]), parseInt(dParts[1]) - 1, parseInt(dParts[2]));
-                let dayName = [_("Sun"), _("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat")][d.getDay()];
-                timeStr = `${dayName} ${dParts[2]} • ${timeStr}`;
-            }
+        if (ev.multi_day) {
+            timeStr = `${timeStr} • ${_("multi-day")}`;
         }
 
         let timeLabel = new St.Label({
@@ -750,7 +775,7 @@ Bri3fingDesklet.prototype = {
         });
         card.add_actor(title);
 
-        let days = this.daysAhead || 7;
+        let days = this.daysAhead || 14;
         let desc = new St.Label({
             text: _("Your schedule is clear for the next %d days.").replace("%d", String(days)),
             style_class: "bri3fing-card-desc"

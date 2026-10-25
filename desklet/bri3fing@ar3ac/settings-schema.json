@@ -45,6 +45,7 @@
         "transparent-background",
         "desklet-opacity",
         "desklet-width",
+        "max-height",
         "font-size",
         "compact-mode"
       ]
@@ -52,12 +53,12 @@
   },
   "days-ahead": {
     "type": "spinbutton",
-    "default": 7,
+    "default": 14,
     "min": 1,
-    "max": 30,
+    "max": 60,
     "step": 1,
     "units": "days",
-    "description": "Number of days ahead to include in briefing"
+    "description": "Number of days ahead to include in briefing (e.g. 14 for 2 weeks)"
   },
   "show-past-events": {
     "type": "switch",
@@ -110,6 +111,15 @@
     "step": 10,
     "units": "px",
     "description": "Desklet width"
+  },
+  "max-height": {
+    "type": "spinbutton",
+    "default": 520,
+    "min": 250,
+    "max": 1200,
+    "step": 20,
+    "units": "px",
+    "description": "Maximum widget height before scrolling (useful for 2+ week agendas)"
   },
   "font-size": {
     "type": "spinbutton",

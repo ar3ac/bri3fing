@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: bri3fing@ar3ac 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 07:29+0100\n"
+"POT-Creation-Date: 2026-10-25 07:37+0100\n"
 "PO-Revision-Date: 2026-10-25 07:26+0100\n"
 "Last-Translator: ar3ac\n"
 "Language-Team: Italian\n"
@@ -14,220 +14,268 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: desklet.js:63
+#: desklet.js:64
 msgid "New Event…"
 msgstr "Nuovo Evento…"
 
-#: desklet.js:67
+#: desklet.js:68
 msgid "Refresh Briefing"
 msgstr "Aggiorna Briefing"
 
-#: desklet.js:71
+#: desklet.js:72
 msgid "Online Accounts…"
 msgstr "Account Online…"
 
-#: desklet.js:120
+#: desklet.js:121
 msgid "Checking schedule…"
 msgstr "Controllo impegni…"
 
-#: desklet.js:139
+#: desklet.js:140
 msgid "Add New Event"
 msgstr "Aggiungi Nuovo Evento"
 
-#: desklet.js:154
+#: desklet.js:155
 msgid "Refresh Schedule"
 msgstr "Aggiorna Calendario"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:454
 msgid "Sunday"
 msgstr "Domenica"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:454
 msgid "Monday"
 msgstr "Lunedì"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:454
 msgid "Tuesday"
 msgstr "Martedì"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:454
 msgid "Wednesday"
 msgstr "Mercoledì"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:455
 msgid "Thursday"
 msgstr "Giovedì"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:455
 msgid "Friday"
 msgstr "Venerdì"
 
-#: desklet.js:191
+#: desklet.js:192 desklet.js:455
 msgid "Saturday"
 msgstr "Sabato"
 
-#: desklet.js:193
+#: desklet.js:194
 msgid "January"
 msgstr "Gennaio"
 
-#: desklet.js:193
+#: desklet.js:194
 msgid "February"
 msgstr "Febbraio"
 
-#: desklet.js:193
+#: desklet.js:194
 msgid "March"
 msgstr "Marzo"
 
-#: desklet.js:193
+#: desklet.js:194
 msgid "April"
 msgstr "Aprile"
 
-#: desklet.js:193
+#: desklet.js:194 desklet.js:458
 msgid "May"
 msgstr "Maggio"
 
-#: desklet.js:193
+#: desklet.js:194
 msgid "June"
 msgstr "Giugno"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "July"
 msgstr "Luglio"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "August"
 msgstr "Agosto"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "September"
 msgstr "Settembre"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "October"
 msgstr "Ottobre"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "November"
 msgstr "Novembre"
 
-#: desklet.js:194
+#: desklet.js:195
 msgid "December"
 msgstr "Dicembre"
 
-#: desklet.js:349
+#: desklet.js:351
 msgid "Updating schedule…"
 msgstr "Aggiornamento in corso…"
 
-#: desklet.js:371
+#: desklet.js:373
 #, javascript-format
 msgid "Updated at %s"
 msgstr "Aggiornato alle %s"
 
-#: desklet.js:375
+#: desklet.js:377
 msgid "event today"
 msgstr "evento oggi"
 
-#: desklet.js:377
+#: desklet.js:379
 msgid "events today"
 msgstr "eventi oggi"
 
-#: desklet.js:379
+#: desklet.js:381
 msgid "No events today"
 msgstr "Nessun evento oggi"
 
-#: desklet.js:382
+#: desklet.js:384
 msgid "Failed to retrieve events"
 msgstr "Impossibile recuperare gli eventi"
 
-#: desklet.js:385
+#: desklet.js:387
 msgid "Failed to parse calendar data: "
 msgstr "Errore nell'analisi dei dati di calendario: "
 
-#: desklet.js:388
+#: desklet.js:390
 msgid "Error querying calendar service"
 msgstr "Errore nell'interrogazione del servizio calendario"
-
-#: desklet.js:436
-msgid "Today"
-msgstr "Oggi"
-
-#: desklet.js:439
-msgid "Tomorrow"
-msgstr "Domani"
 
 #: desklet.js:442
 msgid "Upcoming"
 msgstr "Prossimi Giorni"
 
-#: desklet.js:506 desklet.js:609
-msgid "(Untitled event)"
-msgstr "(Evento senza titolo)"
-
-#: desklet.js:524 desklet.js:621
-msgid "All Day"
-msgstr "Tutto il giorno"
-
-#: desklet.js:535
+#: desklet.js:452
 msgid "Sun"
 msgstr "Dom"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Mon"
 msgstr "Lun"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Tue"
 msgstr "Mar"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Wed"
 msgstr "Mer"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Thu"
 msgstr "Gio"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Fri"
 msgstr "Ven"
 
-#: desklet.js:535
+#: desklet.js:452
 msgid "Sat"
 msgstr "Sab"
 
-#: desklet.js:567
+#: desklet.js:458
+msgid "Jan"
+msgstr "Gen"
+
+#: desklet.js:458
+msgid "Feb"
+msgstr "Feb"
+
+#: desklet.js:458
+msgid "Mar"
+msgstr "Mar"
+
+#: desklet.js:458
+msgid "Apr"
+msgstr "Apr"
+
+#: desklet.js:458
+msgid "Jun"
+msgstr "Giu"
+
+#: desklet.js:459
+msgid "Jul"
+msgstr "Lug"
+
+#: desklet.js:459
+msgid "Aug"
+msgstr "Ago"
+
+#: desklet.js:459
+msgid "Sep"
+msgstr "Set"
+
+#: desklet.js:459
+msgid "Oct"
+msgstr "Ott"
+
+#: desklet.js:459
+msgid "Nov"
+msgstr "Nov"
+
+#: desklet.js:459
+msgid "Dec"
+msgstr "Dic"
+
+#: desklet.js:471
+msgid "Today"
+msgstr "Oggi"
+
+#: desklet.js:473
+msgid "Tomorrow"
+msgstr "Domani"
+
+#: desklet.js:538 desklet.js:636
+msgid "(Untitled event)"
+msgstr "(Evento senza titolo)"
+
+#: desklet.js:556 desklet.js:648
+msgid "All Day"
+msgstr "Tutto il giorno"
+
+#: desklet.js:564
+msgid "multi-day"
+msgstr "più giorni"
+
+#: desklet.js:594
 msgid "NOW"
 msgstr "ORA"
 
-#: desklet.js:573
+#: desklet.js:600
 msgid "SOON"
 msgstr "A BREVE"
 
-#: desklet.js:651
+#: desklet.js:678
 msgid "Delete Event"
 msgstr "Elimina Evento"
 
-#: desklet.js:658
+#: desklet.js:685
 msgid "Close"
 msgstr "Chiudi"
 
-#: desklet.js:672
+#: desklet.js:699
 msgid "Deleting event…"
 msgstr "Eliminazione evento in corso…"
 
-#: desklet.js:678
+#: desklet.js:705
 msgid "Event deleted"
 msgstr "Evento eliminato"
 
-#: desklet.js:685
+#: desklet.js:712
 msgid "Failed to delete event"
 msgstr "Impossibile eliminare l'evento"
 
-#: desklet.js:709
+#: desklet.js:736
 msgid "No calendars connected"
 msgstr "Nessun calendario connesso"
 
-#: desklet.js:715
+#: desklet.js:742
 msgid ""
 "Connect your Google Calendar or CalDAV account in Cinnamon Online Accounts "
 "to view and manage your schedule."
@@ -235,93 +283,93 @@ msgstr ""
 "Collega il tuo account Google Calendar o CalDAV in Account Online di "
 "Cinnamon per visualizzare e gestire la tua agenda."
 
-#: desklet.js:723
+#: desklet.js:750
 msgid "Connect Account"
 msgstr "Collega Account"
 
-#: desklet.js:746
+#: desklet.js:773
 msgid "No upcoming events"
 msgstr "Nessun evento in programma"
 
-#: desklet.js:753
+#: desklet.js:780
 #, javascript-format
 msgid "Your schedule is clear for the next %d days."
 msgstr "Nessun impegno nei prossimi %d giorni."
 
-#: desklet.js:759
+#: desklet.js:786
 msgid "+ Create New Event"
 msgstr "+ Crea Nuovo Evento"
 
-#: desklet.js:780
+#: desklet.js:807
 msgid "Calendar Service Error"
 msgstr "Errore Servizio Calendario"
 
-#: desklet.js:794
+#: desklet.js:821
 msgid "Retry"
 msgstr "Riprova"
 
-#: desklet.js:808
+#: desklet.js:835
 msgid "New Calendar Event"
 msgstr "Nuovo Evento in Calendario"
 
-#: desklet.js:809
+#: desklet.js:836
 msgid "Create an event synced automatically with your calendar account."
 msgstr ""
 "Crea un evento sincronizzato automaticamente con il tuo account di "
 "calendario."
 
-#: desklet.js:821
+#: desklet.js:848
 msgid "Event Title:"
 msgstr "Titolo dell'Evento:"
 
-#: desklet.js:825
+#: desklet.js:852
 msgid "e.g., Team Sync, Doctor Appointment"
 msgstr "es. Riunione Team, Visita Medica"
 
-#: desklet.js:843
+#: desklet.js:870
 msgid "Calendar:"
 msgstr "Calendario:"
 
-#: desklet.js:878
+#: desklet.js:905
 msgid "Date (YYYY-MM-DD):"
 msgstr "Data (AAAA-MM-GG):"
 
-#: desklet.js:891
+#: desklet.js:918
 msgid "Start Time:"
 msgstr "Ora Inizio:"
 
-#: desklet.js:904
+#: desklet.js:931
 msgid "End Time:"
 msgstr "Ora Fine:"
 
-#: desklet.js:918 desklet.js:925 desklet.js:930
+#: desklet.js:945 desklet.js:952 desklet.js:957
 msgid "All Day Event"
 msgstr "Tutto il Giorno"
 
-#: desklet.js:939
+#: desklet.js:966
 msgid "Location (optional):"
 msgstr "Luogo (opzionale):"
 
-#: desklet.js:943
+#: desklet.js:970
 msgid "e.g., Office, Google Meet, Coffee Shop"
 msgstr "es. Ufficio, Google Meet, Bar"
 
-#: desklet.js:964
+#: desklet.js:991
 msgid "Creating event…"
 msgstr "Creazione evento in corso…"
 
-#: desklet.js:983
+#: desklet.js:1010
 msgid "Event created!"
 msgstr "Evento creato!"
 
-#: desklet.js:990
+#: desklet.js:1017
 msgid "Failed to create event"
 msgstr "Impossibile creare l'evento"
 
-#: desklet.js:1004
+#: desklet.js:1031
 msgid "Cancel"
 msgstr "Annulla"
 
-#: desklet.js:1009
+#: desklet.js:1036
 msgid "Create Event"
 msgstr "Crea Evento"

@@ -30,3 +30,4 @@ fi
 
 echo "==> Installation complete!"
 echo "    Add Bri3fing to your desktop from: System Settings -> Desklets"
+

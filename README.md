@@ -9,7 +9,8 @@ Designed with a stealth, minimalist dark glass aesthetic that matches [`tasks-tw
 ## Key Highlights
 
 - **Zero-Friction OS-Native Integration:** No Google Cloud Console setup, no client secret JSON files, and no 7-day token expiration hurdles. Bri3fing taps directly into Linux Mint's native **Online Accounts** (GNOME Online Accounts + Evolution Data Server).
-- **Daily Briefing & Agenda View:** Chronologically grouped schedule (*Today*, *Tomorrow*, and *Upcoming*) with start/end time ranges, calendar color strips, location badges, and live visual indicators for active (**NOW**) or imminent (**SOON**) events.
+- **Chronus-Style Day-by-Day Agenda:** Continuous timeline organized day-by-day (e.g. *Today*, *Tomorrow*, *Tuesday, Oct 27*, *Monday, Nov 2*), skipping empty days for maximum clarity across a 2-week (or custom) horizon.
+- **Visual Status Badges:** Calendar color indicator strips, start/end time ranges, location tags, and real-time badges for active (**NOW**) or imminent (**SOON**) events.
 - **Quick Event Creation (`[+]`):** Add upcoming appointments directly from your desktop in seconds with automatic two-way background sync to Google Calendar.
 - **Interactive Event Inspection:** Click any event on the widget to view its full details (exact time, location, notes, calendar source) or delete it directly from your schedule.
 - **Offline First:** Cached locally in the system's Evolution Data Server database, ensuring your schedule is always visible even without internet connectivity.
@@ -105,7 +106,7 @@ Configure Bri3fing directly through Cinnamon Desklet Settings (*Right-click widg
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| **Days ahead** | Spinbutton | `7` | Number of days ahead to include in briefing (1–30) |
+| **Days ahead** | Spinbutton | `14` | Number of days ahead to include in briefing (1–60) |
 | **Show past events** | Switch | `false` | Display today's events that have already ended |
 | **Show event location** | Switch | `true` | Display event location when available |
 | **24-hour time format** | Switch | `true` | Use 24-hour format (`14:30`) vs 12-hour AM/PM |
@@ -113,6 +114,7 @@ Configure Bri3fing directly through Cinnamon Desklet Settings (*Right-click widg
 | **Transparent background**| Switch | `false` | Enable completely transparent desklet canvas |
 | **Desklet opacity** | Spinbutton | `30%` | Card background opacity when transparency is off |
 | **Desklet width** | Spinbutton | `340px` | Total widget width in pixels |
+| **Max height** | Spinbutton | `520px` | Maximum height before scrolling for 2+ week agendas |
 | **Font size** | Spinbutton | `11pt` | Text size for event titles |
 | **Compact mode** | Switch | `false` | Reduced padding for compact desktop setups |
 
