@@ -439,3 +439,19 @@ msgstr "Show desktop notifications for upcoming events"
 
 msgid "Notification lead time before event starts"
 msgstr "Notification lead time before event starts"
+
+msgid "Connect Account…"
+msgstr "Connect Account…"
+
+msgid "No online account connected"
+msgstr "No online account connected"
+
+msgid "Local mode"
+msgstr "Local mode"
+
+msgid "Local calendar only"
+msgstr "Local calendar only"
+
+msgid "Connect Google…"
+msgstr "Connect Google…"
+

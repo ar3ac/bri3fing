@@ -9,6 +9,7 @@ Designed with a stealth, minimalist dark glass aesthetic that matches [`tasks-tw
 ## Key Highlights
 
 - **Zero-Friction OS-Native Integration:** No Google Cloud Console setup, no client secret JSON files, and no 7-day token expiration hurdles. Bri3fing taps directly into Linux Mint's native **Online Accounts** (GNOME Online Accounts + Evolution Data Server).
+- **Guided First-Launch Onboarding:** When launched for the first time without an online account configured, Bri3fing displays an onboarding card with a direct `[ Connect Account… ]` button, automatically monitoring and refreshing your agenda the moment Google or CalDAV login is completed.
 - **Chronus-Style Day-by-Day Agenda:** Continuous timeline organized day-by-day (e.g. *Today*, *Tomorrow*, *Tuesday, Oct 27*, *Monday, Nov 2*), skipping empty days for maximum clarity across a 2-week (or custom) horizon.
 - **One-Click Video Meeting Join:** Auto-detects Google Meet, Zoom, Microsoft Teams, Webex, and Jitsi links and displays a discrete `[ 📹 Join ]` action button directly on the event row.
 - **Header Calendar Launcher:** Clicking the header date title instantly opens GNOME Calendar or the system default calendar.

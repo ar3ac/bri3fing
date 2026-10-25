@@ -440,3 +440,19 @@ msgstr ""
 
 msgid "Notification lead time before event starts"
 msgstr ""
+
+msgid "Connect Account…"
+msgstr ""
+
+msgid "No online account connected"
+msgstr ""
+
+msgid "Local mode"
+msgstr ""
+
+msgid "Local calendar only"
+msgstr ""
+
+msgid "Connect Google…"
+msgstr ""
+

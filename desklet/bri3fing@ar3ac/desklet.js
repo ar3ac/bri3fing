@@ -619,6 +619,7 @@ Bri3fingDesklet.prototype = {
                     if (data.status === "success") {
                         this._calendars = data.calendars || [];
                         this._events = data.events || [];
+                        this._hasOnlineAccounts = (data.has_online_accounts === true);
                         this._updateCalendarsContextMenu(this._calendars);
                         this._checkImminentEventNotifications(this._events);
                         this._renderSchedule(data);
@@ -630,12 +631,20 @@ Bri3fingDesklet.prototype = {
 
                         let visibleEvents = this._events.filter(e => !this._hiddenCalendarUids.has(e.calendar_uid));
                         let todayCount = visibleEvents.filter(e => e.day_category === "today").length;
-                        if (todayCount === 1) {
-                            this.subtitleLabel.set_text(`1 ${_("event today")} • ${updatedText}`);
-                        } else if (todayCount > 1) {
-                            this.subtitleLabel.set_text(`${todayCount} ${_("events today")} • ${updatedText}`);
+
+                        if (!this._hasOnlineAccounts && this._events.length === 0) {
+                            this.subtitleLabel.set_text(_("No online account connected"));
+                        } else if (!this._hasOnlineAccounts && this._events.length > 0) {
+                            let countText = todayCount === 1 ? `1 ${_("event today")}` : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
+                            this.subtitleLabel.set_text(`${countText} • ${_("Local mode")}`);
                         } else {
-                            this.subtitleLabel.set_text(`${_("No events today")} • ${updatedText}`);
+                            if (todayCount === 1) {
+                                this.subtitleLabel.set_text(`1 ${_("event today")} • ${updatedText}`);
+                            } else if (todayCount > 1) {
+                                this.subtitleLabel.set_text(`${todayCount} ${_("events today")} • ${updatedText}`);
+                            } else {
+                                this.subtitleLabel.set_text(`${_("No events today")} • ${updatedText}`);
+                            }
                         }
                     } else {
                         this._renderError(data.message || _("Failed to retrieve events"));
@@ -656,8 +665,11 @@ Bri3fingDesklet.prototype = {
 
         let rawEvents = (data && data.events) ? data.events : (this._events || []);
         let calendars = (data && data.calendars) ? data.calendars : (this._calendars || []);
+        let hasOnlineAccounts = (data && data.has_online_accounts !== undefined)
+            ? (data.has_online_accounts === true)
+            : (this._hasOnlineAccounts === true);
 
-        if (calendars.length === 0) {
+        if (calendars.length === 0 || (!hasOnlineAccounts && rawEvents.length === 0)) {
             this.scrollView.hide();
             this.messageBox.show();
             this._renderNoCalendarsCard();
@@ -685,6 +697,8 @@ Bri3fingDesklet.prototype = {
             this.messageBox.show();
             if (query) {
                 this._renderNoSearchResultsCard(this._searchQuery);
+            } else if (!hasOnlineAccounts) {
+                this._renderNoCalendarsCard();
             } else {
                 this._renderEmptySchedule();
             }
@@ -694,6 +708,11 @@ Bri3fingDesklet.prototype = {
 
         this.messageBox.hide();
         this.scrollView.show();
+
+        // If running in local mode (no online accounts synced), show a subtle top notice with a quick connect button
+        if (!hasOnlineAccounts) {
+            this._renderLocalModeNotice();
+        }
 
         // Chronus Android widget style: Group events day-by-day chronologically
         let dateGroups = new Map();
@@ -712,6 +731,38 @@ Bri3fingDesklet.prototype = {
 
         this._reapplyItemStyles();
         this._updateDynamicHeight();
+    },
+
+    _renderLocalModeNotice: function() {
+        let banner = new St.BoxLayout({
+            vertical: false,
+            style_class: "bri3fing-account-notice-banner",
+            reactive: true
+        });
+
+        let icon = new St.Icon({
+            icon_name: "dialog-information-symbolic",
+            icon_size: 14,
+            style: "color: #60a5fa; margin-right: 6px;"
+        });
+        banner.add_actor(icon);
+
+        let lbl = new St.Label({
+            text: _("Local calendar only"),
+            style_class: "bri3fing-account-notice-text",
+            x_expand: true
+        });
+        banner.add_actor(lbl);
+
+        let btn = new St.Button({
+            label: _("Connect Google…"),
+            style_class: "bri3fing-account-notice-btn",
+            reactive: true
+        });
+        btn.connect("clicked", () => this._openOnlineAccounts());
+        banner.add_actor(btn);
+
+        this.scheduleBox.add_actor(banner);
     },
 
     _formatSectionHeaderDate: function(dateStr, sampleEvent) {
@@ -1073,12 +1124,28 @@ Bri3fingDesklet.prototype = {
         desc.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD);
         card.add_actor(desc);
 
+        let btnBox = new St.BoxLayout({
+            vertical: false,
+            style: "spacing: 8px; padding-top: 6px;",
+            x_align: Clutter.ActorAlign.CENTER
+        });
+        card.add_actor(btnBox);
+
         let btn = new St.Button({
-            label: _("Connect Account"),
-            style_class: "bri3fing-primary-button"
+            label: _("Connect Account…"),
+            style_class: "bri3fing-primary-button",
+            reactive: true
         });
         btn.connect("clicked", () => this._openOnlineAccounts());
-        card.add_actor(btn);
+        btnBox.add_actor(btn);
+
+        let addLocalBtn = new St.Button({
+            label: _("New Event…"),
+            style_class: "bri3fing-secondary-button",
+            reactive: true
+        });
+        addLocalBtn.connect("clicked", () => this._showAddEventDialog());
+        btnBox.add_actor(addLocalBtn);
 
         this.messageBox.add_actor(card);
     },
@@ -1410,13 +1477,40 @@ Bri3fingDesklet.prototype = {
     _openOnlineAccounts: function() {
         try {
             GLib.spawn_command_line_async("cinnamon-settings online-accounts");
-        } catch (e) {}
+            this._startOnlineAccountsWatcher();
+        } catch (e) {
+            global.logError("[bri3fing] Failed to open Online Accounts: " + e.message);
+        }
+    },
+
+    _startOnlineAccountsWatcher: function() {
+        if (this._accountsWatcherId) {
+            Mainloop.source_remove(this._accountsWatcherId);
+            this._accountsWatcherId = null;
+        }
+
+        let attempts = 0;
+        const maxAttempts = 30; // 30 * 3s = 90s polling window while user configures account
+        this._accountsWatcherId = Mainloop.timeout_add_seconds(3, () => {
+            attempts++;
+            this.refresh();
+            // Stop polling once online account is connected and events are loaded, or max attempts reached
+            if ((this._hasOnlineAccounts && this._events.length > 0) || attempts >= maxAttempts) {
+                this._accountsWatcherId = null;
+                return false;
+            }
+            return true;
+        });
     },
 
     on_desklet_removed: function() {
         if (this._timeoutId) {
             Mainloop.source_remove(this._timeoutId);
             this._timeoutId = null;
+        }
+        if (this._accountsWatcherId) {
+            Mainloop.source_remove(this._accountsWatcherId);
+            this._accountsWatcherId = null;
         }
     }
 };

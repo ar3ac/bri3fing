@@ -327,6 +327,7 @@
     color: #ffffff;
     font-weight: 600;
     font-size: 8.5pt;
+    text-align: center;
     transition-duration: 120ms;
 }
 
@@ -341,12 +342,44 @@
     padding: 5px 12px;
     color: #e5e7eb;
     font-size: 8.5pt;
+    text-align: center;
     transition-duration: 120ms;
 }
 
 .bri3fing-secondary-button:hover {
     background-color: rgba(255, 255, 255, 0.18);
     color: #ffffff;
+}
+
+/* Local Account Notice Banner */
+.bri3fing-account-notice-banner {
+    background-color: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(59, 130, 246, 0.32);
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-bottom: 8px;
+    y-align: center;
+}
+
+.bri3fing-account-notice-text {
+    font-size: 8pt;
+    color: #93c5fd;
+    font-weight: 500;
+}
+
+.bri3fing-account-notice-btn {
+    background-color: rgba(59, 130, 246, 0.40);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    color: #ffffff;
+    font-size: 7.5pt;
+    font-weight: 600;
+    transition-duration: 120ms;
+}
+
+.bri3fing-account-notice-btn:hover {
+    background-color: rgba(59, 130, 246, 0.70);
 }
 
 /* Error Box */

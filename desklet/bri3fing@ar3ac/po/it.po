@@ -441,3 +441,19 @@ msgstr "Mostra notifiche desktop per gli eventi imminenti"
 
 msgid "Notification lead time before event starts"
 msgstr "Anticipo notifica prima dell'inizio dell'evento"
+
+msgid "Connect Account…"
+msgstr "Collega Account…"
+
+msgid "No online account connected"
+msgstr "Nessun account online collegato"
+
+msgid "Local mode"
+msgstr "Modalità locale"
+
+msgid "Local calendar only"
+msgstr "Solo calendario locale"
+
+msgid "Connect Google…"
+msgstr "Collega Google…"
+
