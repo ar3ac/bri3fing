@@ -55,6 +55,7 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-width", "deskletWidth", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "max-height", "maxHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-size", "fontSize", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "header-font-size", "headerFontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "compact-mode", "compactMode", this._onStyleChanged.bind(this));
 
         this._buildUI();
@@ -256,14 +257,35 @@ Bri3fingDesklet.prototype = {
     },
 
     _reapplyFontStyles: function() {
+        let fontSize = this.fontSize || 9;
+        let headerFontSize = this.headerFontSize || 11;
+        let metaFontSize = Math.max(7, fontSize - 1.5);
+        let sectionFontSize = Math.max(7, fontSize - 1.5);
+
+        if (this.dateLabel) {
+            this.dateLabel.set_style(`font-size: ${headerFontSize}pt;`);
+        }
+        if (this.subtitleLabel) {
+            this.subtitleLabel.set_style(`font-size: ${Math.max(7.5, headerFontSize - 3)}pt;`);
+        }
+
         if (!this.scheduleBox) return;
-        let fontSize = this.fontSize || 11;
         try {
             let children = this.scheduleBox.get_children();
             for (let i = 0; i < children.length; i++) {
                 let child = children[i];
-                if (child && child._titleLabel) {
+                if (!child) continue;
+                if (child._titleLabel) {
                     child._titleLabel.set_style(`font-size: ${fontSize}pt;`);
+                }
+                if (child._timeLabel) {
+                    child._timeLabel.set_style(`font-size: ${metaFontSize}pt;`);
+                }
+                if (child._sectionTitleLabel) {
+                    child._sectionTitleLabel.set_style(`font-size: ${sectionFontSize}pt;`);
+                }
+                if (child._sectionCountLabel) {
+                    child._sectionCountLabel.set_style(`font-size: ${sectionFontSize}pt;`);
                 }
             }
         } catch (e) {}
@@ -487,6 +509,7 @@ Bri3fingDesklet.prototype = {
             style_class: "bri3fing-section-title"
         });
         titleLabel.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
+        headerBox._sectionTitleLabel = titleLabel;
         headerBox.add_actor(titleLabel);
 
         let countLabel = new St.Label({
@@ -494,6 +517,7 @@ Bri3fingDesklet.prototype = {
             style_class: "bri3fing-section-count"
         });
         countLabel.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
+        headerBox._sectionCountLabel = countLabel;
         headerBox.add_actor(countLabel);
 
         this.scheduleBox.add_actor(headerBox);
@@ -568,6 +592,7 @@ Bri3fingDesklet.prototype = {
             text: timeStr,
             style_class: "bri3fing-time-label"
         });
+        row._timeLabel = timeLabel;
         metaBox.add_actor(timeLabel);
 
         // Location

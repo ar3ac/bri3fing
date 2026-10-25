@@ -47,6 +47,7 @@
         "desklet-width",
         "max-height",
         "font-size",
+        "header-font-size",
         "compact-mode"
       ]
     }
@@ -123,16 +124,25 @@
   },
   "font-size": {
     "type": "spinbutton",
+    "default": 9,
+    "min": 7,
+    "max": 18,
+    "step": 1,
+    "units": "pt",
+    "description": "Font size for event titles"
+  },
+  "header-font-size": {
+    "type": "spinbutton",
     "default": 11,
     "min": 8,
     "max": 20,
     "step": 1,
     "units": "pt",
-    "description": "Font size for event titles"
+    "description": "Font size for header date"
   },
   "compact-mode": {
     "type": "switch",
-    "default": false,
-    "description": "Compact padding and line spacing"
+    "default": true,
+    "description": "Compact layout with reduced spacing and padding"
   }
 }
