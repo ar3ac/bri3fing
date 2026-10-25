@@ -114,7 +114,8 @@ Configure Bri3fing directly through Cinnamon Desklet Settings (*Right-click widg
 | **Transparent background**| Switch | `false` | Enable completely transparent desklet canvas |
 | **Desklet opacity** | Spinbutton | `30%` | Card background opacity when transparency is off |
 | **Desklet width** | Spinbutton | `340px` | Total widget width in pixels |
-| **Max height** | Spinbutton | `520px` | Maximum height before scrolling for 2+ week agendas |
+| **Desklet height** | Spinbutton | `290px` | Default stable desklet height in pixels |
+| **Auto-shrink height** | Switch | `false` | Dynamically shrink height when there are few events |
 | **Font size** | Spinbutton | `9pt` | Text size for event titles (7–18pt) |
 | **Header font size** | Spinbutton | `11pt` | Text size for header date (8–20pt) |
 | **Compact mode** | Switch | `true` | Reduced padding and spacing for sleek Chronus density |

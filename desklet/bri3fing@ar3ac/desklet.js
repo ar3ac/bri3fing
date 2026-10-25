@@ -53,6 +53,8 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "transparent-background", "transparentBackground", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-opacity", "deskletOpacity", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-width", "deskletWidth", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-height", "deskletHeight", this._onStyleChanged.bind(this));
+        this.settings.bindProperty(Settings.BindingDirection.IN, "auto-shrink-height", "autoShrinkHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "max-height", "maxHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-size", "fontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "header-font-size", "headerFontSize", this._onStyleChanged.bind(this));
@@ -233,13 +235,25 @@ Bri3fingDesklet.prototype = {
             let width = this.deskletWidth || 340;
             this.window.set_width(width);
 
-            let maxH = this.maxHeight || 520;
+            let configuredH = (this.deskletHeight !== undefined && this.deskletHeight !== null)
+                ? this.deskletHeight
+                : (this.maxHeight || 290);
+            let autoShrink = this.autoShrinkHeight === true;
+
+            // Measure header height and window vertical padding
+            let headerH = 45;
+            if (this.header) {
+                let [, hH] = this.header.get_preferred_height(width);
+                if (hH > 0) headerH = hH;
+            }
+            let pad = this.compactMode ? 20 : 28;
+            let availableScrollH = Math.max(70, configuredH - headerH - pad);
 
             if (this.scrollView && this.scheduleBox) {
                 let [, schedH] = this.scheduleBox.get_preferred_height(width);
-                let targetScrollH = Math.min(schedH, maxH);
                 if (schedH > 0) {
                     this.scrollView.show();
+                    let targetScrollH = autoShrink ? Math.min(schedH, availableScrollH) : availableScrollH;
                     this.scrollView.set_height(targetScrollH);
                 } else {
                     this.scrollView.hide();
@@ -252,8 +266,7 @@ Bri3fingDesklet.prototype = {
             if (this.actor) this.actor.set_height(-1);
 
             let [, natH] = this.window.get_preferred_height(width);
-            let minH = 75;
-            let targetH = Math.max(natH, minH);
+            let targetH = autoShrink ? Math.max(natH, 75) : Math.max(natH, configuredH);
 
             this.window.set_height(targetH);
             if (this.content) this.content.set_height(targetH);
@@ -287,7 +300,7 @@ Bri3fingDesklet.prototype = {
                 let child = children[i];
                 if (!child) continue;
                 if (child._titleLabel) {
-                    let st = `font-size: ${fontSize}pt;`;
+                    let st = `font-size: ${fontSize}pt; min-height: ${Math.max(13, fontSize + 3)}px;`;
                     if (titleCol) st += ` color: ${titleCol};`;
                     child._titleLabel.set_style(st);
                 }
@@ -298,7 +311,7 @@ Bri3fingDesklet.prototype = {
                 }
                 if (child._calendarTagLabel) {
                     let st = `font-size: ${Math.max(6.5, metaFontSize - 0.5)}pt;`;
-                    if (calTagCol) st += ` color: ${calTagCol}; border-color: ${calTagCol};`;
+                    if (calTagCol) st += ` color: ${calTagCol};`;
                     child._calendarTagLabel.set_style(st);
                 }
                 if (child._sectionTitleLabel) {

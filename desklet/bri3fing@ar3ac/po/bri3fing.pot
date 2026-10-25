@@ -372,3 +372,11 @@ msgstr ""
 #: desklet.js:1036
 msgid "Create Event"
 msgstr ""
+
+#: settings-schema.json:desklet-height
+msgid "Default desklet height"
+msgstr ""
+
+#: settings-schema.json:auto-shrink-height
+msgid "Automatically shrink height when there are few events"
+msgstr ""

@@ -46,7 +46,8 @@
         "transparent-background",
         "desklet-opacity",
         "desklet-width",
-        "max-height",
+        "desklet-height",
+        "auto-shrink-height",
         "font-size",
         "header-font-size",
         "compact-mode"
@@ -124,6 +125,20 @@
     "step": 10,
     "units": "px",
     "description": "Desklet width"
+  },
+  "desklet-height": {
+    "type": "spinbutton",
+    "default": 290,
+    "min": 180,
+    "max": 1200,
+    "step": 10,
+    "units": "px",
+    "description": "Default desklet height"
+  },
+  "auto-shrink-height": {
+    "type": "switch",
+    "default": false,
+    "description": "Automatically shrink height when there are few events"
   },
   "max-height": {
     "type": "spinbutton",

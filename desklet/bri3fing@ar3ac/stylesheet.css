@@ -55,6 +55,33 @@
     padding-right: 2px;
 }
 
+/* Custom Sleek Scrollbar */
+.bri3fing-scroll-view StScrollBar {
+    min-width: 5px;
+    max-width: 6px;
+    padding: 0;
+}
+
+.bri3fing-scroll-view StScrollBar StBin#trough {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.bri3fing-scroll-view StScrollBar StButton#vhandle {
+    background-color: rgba(255, 255, 255, 0.28);
+    border-radius: 3px;
+    border: none;
+    transition-duration: 120ms;
+}
+
+.bri3fing-scroll-view StScrollBar StButton#vhandle:hover {
+    background-color: rgba(96, 165, 250, 0.75);
+}
+
+.bri3fing-scroll-view StScrollBar StButton#vhandle:active {
+    background-color: rgba(96, 165, 250, 0.95);
+}
+
 .bri3fing-schedule-box {
     spacing: 1px;
 }
@@ -88,6 +115,7 @@
     padding: 3px 6px;
     margin-top: 1px;
     margin-bottom: 1px;
+    min-height: 34px;
     transition-duration: 100ms;
 }
 
@@ -119,6 +147,7 @@
 /* Middle Details Box */
 .bri3fing-event-details {
     spacing: 1px;
+    min-height: 26px;
 }
 
 .bri3fing-event-summary {
@@ -126,6 +155,7 @@
     font-weight: 600;
     color: #f3f4f6;
     line-height: 1.25;
+    min-height: 14px;
 }
 
 .bri3fing-event-meta {
@@ -148,9 +178,9 @@
     color: #93c5fd;
     font-weight: 500;
     background-color: rgba(147, 197, 253, 0.12);
-    border: 1px solid rgba(147, 197, 253, 0.28);
+    border: none;
     border-radius: 3px;
-    padding: 0 4px;
+    padding: 1px 5px;
     margin-left: 3px;
 }
 
