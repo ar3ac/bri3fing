@@ -1,67 +1,94 @@
-# Istruzioni e Specifiche di Progetto per Agenti AI (AGENTS.md)
+# AI Agent Instructions & Project Specifications (AGENTS.md)
 
-## Obiettivo del Progetto
-Sviluppare **`Bri3fing`** (`bri3fing@ar3ac`), una desklet nativa per **Cinnamon Desktop** che consente di:
-1. **Visualizzare il briefing della giornata e dei prossimi impegni** sincronizzati con **Google Calendar** (e qualsiasi altro calendario supportato da Linux Mint).
-2. **Creare nuovi eventi** rapidamente direttamente dal desktop, sincronizzandoli istantaneamente con Google Calendar.
-3. Offrire un'esperienza di installazione e login fluida, elegante e completamente priva di attriti per l'utente finale.
-
----
-
-## Architettura e Decisioni Tecniche
-
-### 1. Perché GNOME Online Accounts (GOA) ed Evolution Data Server (EDS)?
-Durante l'analisi preliminare è stata scartata l'integrazione Google API "fai-da-te" (tipo `gcalendar` o OAuth 2.0 loopback via script) per motivi critici:
-- **Nessuna dipendenza Python esterna o blocco PEP 668:** Su Ubuntu 24.04 / Mint 22 `pip` è bloccato e richiederebbe la gestione complessa di un `.venv` locale.
-- **Niente token che scadono a 7 giorni:** I progetti Google Cloud in test mode revocano i token ogni settimana; le app non verificate mostrano schermate d'avviso rosse e hanno quote limitate a 100 utenti.
-- **Nessuna configurazione su Google Cloud Console richiesta all'utente.**
-- **Integrazione nativa Linux Mint:** Linux Mint include già nel sistema `evolution-data-server`, `evolution-calendar-factory` e le librerie GObject Introspection (`gir1.2-ecal-2.0`, `gir1.2-edataserver-1.2`).
-- **Autenticazione gestita dal sistema operativo:** L'utente accede da *Impostazioni -> Account Online -> Google*. Il sistema operativo gestisce OAuth2 con certificati ufficiali, rinnovo token e sincronizzazione CalDAV in background.
-
-### 2. Funzionamento di EDS e Comunicazione
-- I calendari e gli eventi sono memorizzati nella cache locale gestita da EDS (`/usr/libexec/evolution-calendar-factory`).
-- La desklet può interrogare EDS direttamente da GJS (`imports.gi.ECal` / DBus `org.cinnamon.CalendarServer` o `org.gnome.evolution.dataserver.Calendar8`) o tramite un micro-script Python leggero che usa le librerie di sistema `gi.repository.ECal` / `gi.repository.EDataServer`.
-- La creazione di un evento (componente `VEVENT` iCalendar) nel client EDS locale viene sincronizzata automaticamente da EDS con il server di Google Calendar.
-- Supporto offline nativo: gli impegni vengono mostrati anche in assenza temporanea di connessione Internet.
+## Project Overview
+Develop **`Bri3fing`** (`bri3fing@ar3ac`), a native desklet for the **Cinnamon Desktop Environment** that allows users to:
+1. **View their daily briefing and upcoming schedule** synchronized with **Google Calendar** (and any other account supported by Linux Mint's Online Accounts).
+2. **Quickly create new events** directly from the desktop, syncing instantly with Google Calendar.
+3. Provide a seamless, zero-friction setup and login experience for the end user.
 
 ---
 
-## Esperienza Utente (UX/UI Desklet)
+## Architecture & Technical Decisions
 
-Seguire la coerenza grafica e stilistica dei progetti precedenti (`tasks-tw@ar3ac` e `book-radar@ar3ac`):
-1. **Stato "Non Connesso":**
-   - Se nessun account calendario è presente, mostrare una schermata elegante con pulsante `[ Connetti Account ]` che apre con un clic `cinnamon-settings online-accounts` (o `gnome-control-center online-accounts`).
-2. **Vista Agenda (Briefing):**
-   - Visualizzazione ordinata degli impegni: Oggi, Domani e Prossimi giorni.
-   - Ora inizio / fine, titolo dell'evento, colore del calendario di appartenenza.
-   - Evidenziazione visiva per l'evento in corso o imminente.
-3. **Creazione Eventi Rapida:**
-   - Pulsante `[+]` nell'intestazione o nella barra inferiore.
-   - Form compatto per inserire Titolo, Data (default oggi), Ora inizio e Ora fine, e selezione del calendario.
-   - Salvataggio immediato in EDS e notifica/aggiornamento al volo.
-4. **Controlli Desklet:**
-   - Pulsante refresh manuale + timer di auto-refresh configurabile.
-   - Supporto alle impostazioni Cinnamon (`settings-schema.json`) per opacità, larghezza, dimensione font e intervallo di refresh.
+### 1. Why GNOME Online Accounts (GOA) & Evolution Data Server (EDS)?
+Custom Google API solutions (such as the legacy `gcalendar` CLI or custom desktop OAuth loopbacks) were explicitly rejected due to significant real-world pitfalls:
+- **No external Python dependency hell or PEP 668 restrictions:** Ubuntu 24.04 / Linux Mint 22 blocks global `pip` installs; avoiding an internal `.venv` saves complexity and ~60MB of disk space.
+- **No 7-day token expiration:** Unverified/Testing Google Cloud OAuth apps invalidate tokens every week. Production unverified apps display scary red security warnings and cap access at 100 users.
+- **No Google Cloud Console setup required from users:** Tapping into system credentials eliminates manual API key and JSON file management.
+- **Native Linux Mint Stack:** Mint already ships with `evolution-data-server`, `evolution-calendar-factory` running in the background, and GObject Introspection packages (`gir1.2-ecal-2.0`, `gir1.2-edataserver-1.2`).
+- **OS-Managed Authentication:** User authenticates via *System Settings -> Online Accounts -> Google*. The operating system handles OAuth2 tokens, refresh cycles, and CalDAV synchronization transparently.
+
+### 2. EDS Data Flow
+- Calendars and events are cached locally by EDS (`/usr/libexec/evolution-calendar-factory`).
+- The desklet queries EDS via GJS (`imports.gi.ECal` / DBus `org.cinnamon.CalendarServer` or `org.gnome.evolution.dataserver.Calendar8`) or via a lightweight system-Python helper using `gi.repository.ECal` / `gi.repository.EDataServer`.
+- Creating a `VEVENT` component in the local EDS client triggers background synchronization to Google Calendar.
+- Offline support is inherent: cached events remain visible without network access.
 
 ---
 
-## Struttura della Repository
+## Internationalization (i18n) & Coding Standards
+
+In accordance with global repository rules:
+1. **Code & Comments:** All source code, variables, functions, and internal comments MUST be written in **English**.
+2. **Cinnamon Gettext Standard:**
+   - Wrap all user-facing UI strings with `_("String in English")`.
+   - Setup gettext domain binding for `bri3fing@ar3ac`:
+     ```javascript
+     const Gettext = imports.gettext;
+     const GLib = imports.gi.GLib;
+     const UUID = "bri3fing@ar3ac";
+     Gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale");
+     function _(str) {
+         let customTranslation = Gettext.dgettext(UUID, str);
+         if (customTranslation !== str) return customTranslation;
+         return Gettext.gettext(str);
+     }
+     ```
+   - Provide translation catalogs in `desklet/bri3fing@ar3ac/po/`:
+     - `bri3fing.pot` (template)
+     - `it.po` (Italian translation)
+     - `en.po` (English base)
+
+---
+
+## User Experience (UX/UI Requirements)
+
+Follow the aesthetic consistency of `tasks-tw@ar3ac` and `book-radar@ar3ac`:
+1. **"Not Connected" State:**
+   - If no calendar account is configured in EDS, display a clean card:  
+     `"No calendars connected"` with a button `[ Connect Account ]` that triggers `cinnamon-settings online-accounts`.
+2. **Briefing View (Agenda):**
+   - Clean schedule grouped by day: Today, Tomorrow, and Upcoming days.
+   - Start / end times, event titles, calendar color indicators.
+   - Visual emphasis for active (happening now) or imminent events.
+3. **Quick Event Creation:**
+   - A `[+]` button in the header or footer.
+   - Minimal input fields: Title, Date (default today), Start Time, End Time, and Calendar selector.
+   - Immediate EDS insertion and UI refresh.
+4. **Desklet Controls:**
+   - Manual refresh icon + configurable auto-refresh interval.
+   - Cinnamon settings schema (`settings-schema.json`) for opacity, panel width, font scaling, and refresh timer.
+
+---
+
+## Repository Structure
 ```text
 bri3fing/
-├── AGENTS.md                  # Specifiche e contesto di lavoro per l'assistente AI
-├── README.md                  # Documentazione per l'utente finale e guida all'uso
+├── AGENTS.md                  # AI agent guidelines, design decisions & architecture
+├── README.md                  # Public documentation & user guide (in English)
 ├── .gitignore
 └── desklet/
-    └── bri3fing@ar3ac/        # Cartella desklet (simlinkata in ~/.local/share/cinnamon/desklets/)
-        ├── metadata.json      # Metadati desklet Cinnamon
-        ├── desklet.js         # Codice principale GJS della desklet
-        ├── stylesheet.css     # Stile CSS personalizzato
-        ├── settings-schema.json # Schema delle impostazioni Cinnamon
-        └── icon.png           # Icona desklet
+    └── bri3fing@ar3ac/        # Cinnamon Desklet bundle
+        ├── metadata.json      # Desklet metadata
+        ├── desklet.js         # Core GJS desklet implementation
+        ├── stylesheet.css     # Desklet styling
+        ├── settings-schema.json # Cinnamon settings schema
+        ├── po/                # Translation files (bri3fing.pot, it.po, en.po)
+        └── icon.png           # Desklet icon
 ```
 
 ---
 
-## Regole di Sviluppo (Post-Modifica)
-1. **Aggiornamento Documentazione (.md):** Mantenere aggiornato il `README.md` per ogni nuova feature o modifica strutturale.
-2. **Git Commit & Push:** Al termine del lavoro e dopo aver testato/validato, eseguire un commit con messaggio descrittivo ed effettuare il `git push origin main`.
+## Post-Edit Workflow Rules
+1. **Maintain Documentation:** Keep `README.md` updated as features evolve.
+2. **Git Commit & Push:** Follow Conventional Commits in English (e.g., `feat: ...`, `fix: ...`) and always push to `origin main`.

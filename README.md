@@ -1,44 +1,66 @@
 # Bri3fing (`bri3fing@ar3ac`)
 
-Desklet nativa per l'ambiente desktop **Cinnamon** (Linux Mint) per avere sempre sott'occhio il proprio briefing giornaliero e **creare nuovi eventi** sincronizzati con **Google Calendar** (o altri account CalDAV/Nextcloud/Microsoft).
+A sleek, stealthy desktop agenda widget and event creator for the **Cinnamon Desktop Environment** (Linux Mint), seamlessly synchronized with **Google Calendar** (as well as Nextcloud, Microsoft 365, and generic CalDAV accounts).
 
 ---
 
-## Caratteristiche Principali
+## Key Features
 
-- **Login Semplice e Senza Attriti:** Nessuna API key da creare su Google Cloud Console, nessun file JSON di credenziali e nessun token che scade ogni 7 giorni. Sfrutta l'integrazione nativa del sistema operativo tramite **Account Online** (GNOME Online Accounts ed Evolution Data Server).
-- **Creazione Eventi Rapida:** Aggiungi impegni direttamente dal desktop con un clic, con sincronizzazione istantanea sul tuo Google Calendar.
-- **Vista Briefing Moderna:** Visualizza gli impegni di oggi, domani e dei prossimi giorni con orari chiari, indicatori cromatici dei calendari e badge per gli eventi in corso.
-- **Funziona anche Offline:** Memorizzazione nella cache locale del sistema operativo; gli eventi sono sempre visibili anche se momentaneamente disconnessi.
-- **Stile Dark & Stealth:** Interfaccia scura, elegante e personalizzabile (larghezza, trasparenza, font), allineata allo stile di `tasks-tw` e `book-radar`.
-
----
-
-## Prerequisiti e Configurazione Account
-
-Per connettere il tuo Google Calendar:
-1. Apri il menu delle applicazioni di Linux Mint / Cinnamon e cerca **Account Online** (o apri *Impostazioni di Sistema -> Account Online*).
-2. Clicca su **Google** ed esegui il normale accesso con la tua email e password.
-3. Assicurati che l'opzione **Calendario** sia attiva.
-
-La desklet rileverà automaticamente i tuoi calendari e mostrerà subito gli impegni.
+- **Frictionless OS-Native Authentication:** No Google Cloud Console setup, no client secret JSON files, and no 7-day token expiration hurdles. It taps directly into Linux Mint's native **Online Accounts** (GNOME Online Accounts + Evolution Data Server).
+- **Quick Event Creation:** Add upcoming events directly from your desktop in seconds with instant two-way background sync to Google Calendar.
+- **Modern Schedule Briefing:** Stay on top of today's and upcoming appointments with clear time ranges, calendar color coding, and visual indicators for active or imminent events.
+- **Offline First:** Cached locally by the system's Evolution Data Server database, ensuring your schedule is always visible even without internet connectivity.
+- **Stealth & Dark Theme Aesthetic:** Minimalist, transparent dark design matching the Cinnamon desktop aesthetic and customizable via Cinnamon Desklet settings.
+- **Internationalization (i18n):** Native multilingual support (English and Italian out of the box).
 
 ---
 
-## Installazione Desklet
+## Prerequisites & Account Setup
 
-Il repository è strutturato con la cartella desklet pronta per essere collegata all'ambiente Cinnamon:
+To connect your Google Calendar:
+
+1. Open your Cinnamon Application Menu and launch **Online Accounts** (or navigate to *System Settings -> Online Accounts*).
+2. Select **Google** and log in with your Google account.
+3. Ensure the **Calendar** toggle is turned **ON**.
+
+Once enabled, Bri3fing will automatically discover your calendars and populate your agenda without requiring any API keys.
+
+---
+
+## Installation
+
+The repository is structured with the desklet ready to be linked to your local Cinnamon environment:
 
 ```bash
 mkdir -p ~/.local/share/cinnamon/desklets
 ln -snf /home/ar3ac/projects/bri3fing/desklet/bri3fing@ar3ac ~/.local/share/cinnamon/desklets/bri3fing@ar3ac
 ```
 
-Abilita la desklet da *Impostazioni di Sistema -> Desklet* selezionando **Bri3fing**.
+Then enable the desklet in Cinnamon:
+1. Open **System Settings -> Desklets**.
+2. Locate **Bri3fing** and click the **+** (Add) button to place it on your desktop.
 
 ---
 
-## Sviluppo e Struttura
+## Project Structure & Development
 
-- `desklet/bri3fing@ar3ac/`: contiene il codice GJS, i fogli di stile e la configurazione della desklet Cinnamon.
-- `AGENTS.md`: note architetturali, decisioni di design e linee guida per gli sviluppatori / agenti AI.
+```text
+bri3fing/
+├── AGENTS.md                  # AI agent guidelines, design decisions & architecture
+├── README.md                  # Public documentation & user guide
+├── .gitignore
+└── desklet/
+    └── bri3fing@ar3ac/        # Cinnamon Desklet bundle
+        ├── metadata.json      # Desklet metadata
+        ├── desklet.js         # Core GJS desklet implementation
+        ├── stylesheet.css     # Desklet styling
+        ├── settings-schema.json # Cinnamon settings schema
+        ├── po/                # Translation catalogs (en, it)
+        └── icon.png           # Desklet icon
+```
+
+---
+
+## License & Contributing
+
+Contributions, bug reports, and suggestions are welcome! Feel free to open an issue or submit a pull request.
