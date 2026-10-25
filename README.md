@@ -1,16 +1,16 @@
-# calendar-desklet (`calendar@ar3ac`)
+# Bri3fing (`bri3fing@ar3ac`)
 
-Desklet nativa per l'ambiente desktop **Cinnamon** (Linux Mint) per visualizzare la propria agenda e **creare nuovi eventi** sincronizzati con **Google Calendar** (o altri account CalDAV/Nextcloud/Microsoft).
+Desklet nativa per l'ambiente desktop **Cinnamon** (Linux Mint) per avere sempre sott'occhio il proprio briefing giornaliero e **creare nuovi eventi** sincronizzati con **Google Calendar** (o altri account CalDAV/Nextcloud/Microsoft).
 
 ---
 
 ## Caratteristiche Principali
 
-- **Login Facile e Senza Frustrazioni:** Nessuna API key da creare su Google Cloud Console, nessun file JSON di credenziali e nessun token che scade ogni 7 giorni. Sfrutta l'integrazione nativa del sistema operativo tramite **Account Online** (GNOME Online Accounts ed Evolution Data Server).
+- **Login Semplice e Senza Attriti:** Nessuna API key da creare su Google Cloud Console, nessun file JSON di credenziali e nessun token che scade ogni 7 giorni. Sfrutta l'integrazione nativa del sistema operativo tramite **Account Online** (GNOME Online Accounts ed Evolution Data Server).
 - **Creazione Eventi Rapida:** Aggiungi impegni direttamente dal desktop con un clic, con sincronizzazione istantanea sul tuo Google Calendar.
-- **Vista Agenda Moderna:** Visualizza gli eventi di oggi, domani e dei prossimi giorni con orari chiari, indicatori cromatici dei calendari e badge per gli eventi in corso.
+- **Vista Briefing Moderna:** Visualizza gli impegni di oggi, domani e dei prossimi giorni con orari chiari, indicatori cromatici dei calendari e badge per gli eventi in corso.
 - **Funziona anche Offline:** Memorizzazione nella cache locale del sistema operativo; gli eventi sono sempre visibili anche se momentaneamente disconnessi.
-- **Stile Coerente con Cinnamon:** Interfaccia scura, elegante e personalizzabile (larghezza, trasparenza, font), allineata allo stile di `tasks-tw` e `book-radar`.
+- **Stile Dark & Stealth:** Interfaccia scura, elegante e personalizzabile (larghezza, trasparenza, font), allineata allo stile di `tasks-tw` e `book-radar`.
 
 ---
 
@@ -31,14 +31,14 @@ Il repository è strutturato con la cartella desklet pronta per essere collegata
 
 ```bash
 mkdir -p ~/.local/share/cinnamon/desklets
-ln -snf /home/ar3ac/projects/calendar-desklet/desklet/calendar@ar3ac ~/.local/share/cinnamon/desklets/calendar@ar3ac
+ln -snf /home/ar3ac/projects/bri3fing/desklet/bri3fing@ar3ac ~/.local/share/cinnamon/desklets/bri3fing@ar3ac
 ```
 
-Abilita la desklet da *Impostazioni di Sistema -> Desklet* selezionando **Calendar & Agenda**.
+Abilita la desklet da *Impostazioni di Sistema -> Desklet* selezionando **Bri3fing**.
 
 ---
 
 ## Sviluppo e Struttura
 
-- `desklet/calendar@ar3ac/`: contiene il codice GJS, i fogli di stile e la configurazione della desklet Cinnamon.
+- `desklet/bri3fing@ar3ac/`: contiene il codice GJS, i fogli di stile e la configurazione della desklet Cinnamon.
 - `AGENTS.md`: note architetturali, decisioni di design e linee guida per gli sviluppatori / agenti AI.

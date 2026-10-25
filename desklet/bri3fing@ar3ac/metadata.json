@@ -1,0 +1,10 @@
+{
+  "uuid": "bri3fing@ar3ac",
+  "name": "Bri3fing",
+  "description": "Desklet per Cinnamon per visualizzare il briefing dei tuoi impegni e creare eventi sincronizzati con Google Calendar tramite GNOME Online Accounts / EDS",
+  "version": "1.0.0",
+  "prevent-decorations": true,
+  "author": "ar3ac",
+  "cinnamon-version": ["5.4", "5.6", "5.8", "6.0", "6.2", "6.4"],
+  "max-instances": "1"
+}
