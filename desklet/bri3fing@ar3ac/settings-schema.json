@@ -1,0 +1,128 @@
+{
+  "layout": {
+    "type": "layout",
+    "pages": [
+      "general-page",
+      "appearance-page"
+    ],
+    "general-page": {
+      "type": "page",
+      "title": "General",
+      "sections": [
+        "schedule-section",
+        "sync-section"
+      ]
+    },
+    "appearance-page": {
+      "type": "page",
+      "title": "Appearance",
+      "sections": [
+        "style-section"
+      ]
+    },
+    "schedule-section": {
+      "type": "section",
+      "title": "Schedule & Briefing",
+      "keys": [
+        "days-ahead",
+        "show-past-events",
+        "show-event-location",
+        "time-format-24h"
+      ]
+    },
+    "sync-section": {
+      "type": "section",
+      "title": "Synchronization & Calendar",
+      "keys": [
+        "refresh-interval",
+        "default-calendar-uid"
+      ]
+    },
+    "style-section": {
+      "type": "section",
+      "title": "Dimensions & Aesthetics",
+      "keys": [
+        "transparent-background",
+        "desklet-opacity",
+        "desklet-width",
+        "font-size",
+        "compact-mode"
+      ]
+    }
+  },
+  "days-ahead": {
+    "type": "spinbutton",
+    "default": 7,
+    "min": 1,
+    "max": 30,
+    "step": 1,
+    "units": "days",
+    "description": "Number of days ahead to include in briefing"
+  },
+  "show-past-events": {
+    "type": "switch",
+    "default": false,
+    "description": "Show today's events that have already ended"
+  },
+  "show-event-location": {
+    "type": "switch",
+    "default": true,
+    "description": "Display event location when available"
+  },
+  "time-format-24h": {
+    "type": "switch",
+    "default": true,
+    "description": "Use 24-hour time format (e.g. 14:30 vs 2:30 PM)"
+  },
+  "refresh-interval": {
+    "type": "spinbutton",
+    "default": 10,
+    "min": 1,
+    "max": 120,
+    "step": 1,
+    "units": "minutes",
+    "description": "Automatic refresh frequency"
+  },
+  "default-calendar-uid": {
+    "type": "entry",
+    "default": "",
+    "description": "Default calendar UID for quick add (leave blank for auto-selection)"
+  },
+  "transparent-background": {
+    "type": "switch",
+    "default": false,
+    "description": "Fully transparent desklet background"
+  },
+  "desklet-opacity": {
+    "type": "spinbutton",
+    "default": 30,
+    "min": 0,
+    "max": 100,
+    "step": 5,
+    "units": "%",
+    "description": "Background opacity (if transparent background is disabled)"
+  },
+  "desklet-width": {
+    "type": "spinbutton",
+    "default": 340,
+    "min": 260,
+    "max": 800,
+    "step": 10,
+    "units": "px",
+    "description": "Desklet width"
+  },
+  "font-size": {
+    "type": "spinbutton",
+    "default": 11,
+    "min": 8,
+    "max": 20,
+    "step": 1,
+    "units": "pt",
+    "description": "Font size for event titles"
+  },
+  "compact-mode": {
+    "type": "switch",
+    "default": false,
+    "description": "Compact padding and line spacing"
+  }
+}

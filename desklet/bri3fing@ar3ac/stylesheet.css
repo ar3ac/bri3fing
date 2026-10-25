@@ -1,0 +1,295 @@
+/* Bri3fing Desklet Stylesheet (Stealth & Minimalist Dark Aesthetic) */
+
+.bri3fing-container {
+    background-color: rgba(20, 20, 24, 0.88);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 12px 14px;
+    color: #f3f4f6;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Header */
+.bri3fing-header {
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    spacing: 8px;
+}
+
+.bri3fing-date-title {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+}
+
+.bri3fing-subtitle {
+    font-size: 8.5pt;
+    color: #9ca3af;
+    padding-top: 1px;
+}
+
+/* Action Buttons (Add, Refresh) */
+.bri3fing-action-button {
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 4px 6px;
+    color: #d1d5db;
+    transition-duration: 120ms;
+}
+
+.bri3fing-action-button:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(96, 165, 250, 0.60);
+    color: #ffffff;
+}
+
+.bri3fing-action-button:active {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Scroll View & Content */
+.bri3fing-scroll-view {
+    padding-right: 2px;
+}
+
+.bri3fing-schedule-box {
+    spacing: 2px;
+}
+
+/* Section Headers (Today, Tomorrow, Upcoming) */
+.bri3fing-section-header {
+    spacing: 6px;
+    padding-top: 8px;
+    padding-bottom: 4px;
+    margin-top: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bri3fing-section-title {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #60a5fa;
+    letter-spacing: 0.5px;
+}
+
+.bri3fing-section-count {
+    font-size: 8pt;
+    color: #6b7280;
+}
+
+/* Event Row */
+.bri3fing-event-row {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    transition-duration: 100ms;
+}
+
+.bri3fing-event-row:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Active / Ongoing Event Highlight */
+.bri3fing-event-row-active {
+    background-color: rgba(16, 185, 129, 0.10);
+    border: 1px solid rgba(16, 185, 129, 0.40);
+}
+
+/* Imminent Event Highlight */
+.bri3fing-event-row-imminent {
+    background-color: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* Calendar Color Strip */
+.bri3fing-color-pill {
+    width: 4px;
+    border-radius: 2px;
+    margin-right: 8px;
+    min-height: 24px;
+}
+
+/* Middle Details Box */
+.bri3fing-event-details {
+    spacing: 2px;
+}
+
+.bri3fing-event-summary {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #f3f4f6;
+    line-height: 1.3;
+}
+
+.bri3fing-event-meta {
+    spacing: 4px;
+}
+
+.bri3fing-time-label {
+    font-size: 8.5pt;
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+.bri3fing-meta-subtext {
+    font-size: 8pt;
+    color: #9ca3af;
+}
+
+.bri3fing-meta-calendar {
+    font-size: 8pt;
+    color: #6b7280;
+}
+
+/* Status Badges */
+.bri3fing-badge-now {
+    background-color: rgba(16, 185, 129, 0.25);
+    border: 1px solid rgba(16, 185, 129, 0.70);
+    border-radius: 4px;
+    color: #34d399;
+    font-size: 7.5pt;
+    font-weight: bold;
+    padding: 1px 5px;
+    margin-left: 6px;
+    y-align: center;
+}
+
+.bri3fing-badge-soon {
+    background-color: rgba(245, 158, 11, 0.25);
+    border: 1px solid rgba(245, 158, 11, 0.70);
+    border-radius: 4px;
+    color: #fbbf24;
+    font-size: 7.5pt;
+    font-weight: bold;
+    padding: 1px 5px;
+    margin-left: 6px;
+    y-align: center;
+}
+
+/* Zero State / Empty State Card */
+.bri3fing-message-box {
+    padding-top: 6px;
+}
+
+.bri3fing-card-empty {
+    padding: 20px 14px;
+    spacing: 8px;
+    x-align: center;
+}
+
+.bri3fing-card-icon {
+    color: #60a5fa;
+    margin-bottom: 4px;
+}
+
+.bri3fing-card-title {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #f3f4f6;
+    text-align: center;
+}
+
+.bri3fing-card-desc {
+    font-size: 9pt;
+    color: #9ca3af;
+    text-align: center;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+/* Action Buttons in Zero State */
+.bri3fing-primary-button {
+    background-color: #2563eb;
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 9pt;
+    transition-duration: 120ms;
+}
+
+.bri3fing-primary-button:hover {
+    background-color: #1d4ed8;
+}
+
+.bri3fing-secondary-button {
+    background-color: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: #e5e7eb;
+    font-size: 9pt;
+    transition-duration: 120ms;
+}
+
+.bri3fing-secondary-button:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+/* Error Box */
+.bri3fing-error-box {
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.40);
+    border-radius: 8px;
+    padding: 12px;
+    spacing: 6px;
+    margin-top: 6px;
+}
+
+.bri3fing-error-title {
+    font-size: 9.5pt;
+    font-weight: bold;
+    color: #fca5a5;
+    text-align: center;
+}
+
+.bri3fing-error-desc {
+    font-size: 8.5pt;
+    color: #fecaca;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Modal Dialog Form Elements */
+.bri3fing-dialog-form {
+    spacing: 8px;
+}
+
+.bri3fing-dialog-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.bri3fing-pill-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: #d1d5db;
+    font-size: 8.5pt;
+    transition-duration: 100ms;
+}
+
+.bri3fing-pill-btn:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.bri3fing-pill-btn-active {
+    background-color: rgba(37, 99, 235, 0.40);
+    border: 1px solid rgba(96, 165, 250, 0.80);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 8.5pt;
+}

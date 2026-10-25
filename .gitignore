@@ -39,3 +39,6 @@ Thumbs.db
 output.txt
 *.log
 
+
+# Compiled translations
+*.mo

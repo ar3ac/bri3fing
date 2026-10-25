@@ -77,12 +77,15 @@ bri3fing/
 ├── AGENTS.md                  # AI agent guidelines, design decisions & architecture
 ├── README.md                  # Public documentation & user guide (in English)
 ├── .gitignore
+├── scripts/
+│   └── install.sh             # Automated installer & translation compiler
 └── desklet/
     └── bri3fing@ar3ac/        # Cinnamon Desklet bundle
         ├── metadata.json      # Desklet metadata
         ├── desklet.js         # Core GJS desklet implementation
         ├── stylesheet.css     # Desklet styling
         ├── settings-schema.json # Cinnamon settings schema
+        ├── eds_helper.py      # Evolution Data Server backend helper
         ├── po/                # Translation files (bri3fing.pot, it.po, en.po)
         └── icon.png           # Desklet icon
 ```
