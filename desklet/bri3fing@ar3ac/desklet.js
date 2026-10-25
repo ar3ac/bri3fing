@@ -136,8 +136,10 @@ Bri3fingDesklet.prototype = {
         this.dateBtn = new St.Button({
             style_class: "bri3fing-date-button",
             reactive: true,
-            can_focus: true
+            can_focus: true,
+            x_align: St.Align.START
         });
+        this.dateBtn.set_x_align(Clutter.ActorAlign.START);
         this.dateLabel = new St.Label({
             text: this._getFormattedCurrentDate(),
             style_class: "bri3fing-date-title"
