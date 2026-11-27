@@ -36,13 +36,20 @@ Bri3fingDesklet.prototype = {
         this.metadata = metadata;
         this.desklet_id = desklet_id;
         this._timeoutId = null;
+        this._minuteTimerId = null;
+        this._refreshDelayId = null;
+        this._accountsWatcherId = null;
+        this._activeDialog = null;
         this._isLoading = false;
+        this._pendingRefresh = false;
         this._calendars = [];
         this._events = [];
-        this._notifiedEventIds = new Set();
+        this._notifiedEventIds = new Map();
         this._hiddenCalendarUids = new Set();
         this._searchQuery = "";
         this._calendarsSubmenu = null;
+        this._lastUpdatedTimeStr = "";
+        this._lastRenderedDateStr = this._getTodayIso();
 
         // Force disable Cinnamon's default opaque decorations
         this.metadata["prevent-decorations"] = true;
@@ -67,7 +74,6 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-width", "deskletWidth", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "desklet-height", "deskletHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "auto-shrink-height", "autoShrinkHeight", this._onStyleChanged.bind(this));
-        this.settings.bindProperty(Settings.BindingDirection.IN, "max-height", "maxHeight", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-size", "fontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "header-font-size", "headerFontSize", this._onStyleChanged.bind(this));
         this.settings.bindProperty(Settings.BindingDirection.IN, "compact-mode", "compactMode", this._onStyleChanged.bind(this));
@@ -268,6 +274,11 @@ Bri3fingDesklet.prototype = {
         this.window.add_actor(this.messageBox);
     },
 
+    _getTodayIso: function() {
+        let now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    },
+
     _getFormattedCurrentDate: function() {
         let now = new Date();
         let days = [_("Sunday"), _("Monday"), _("Tuesday"), _("Wednesday"), _("Thursday"), _("Friday"), _("Saturday")];
@@ -322,7 +333,8 @@ Bri3fingDesklet.prototype = {
     _extractMeetingUrl: function(ev) {
         let text = `${ev.location || ""} ${ev.description || ""}`;
         let match = text.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)?(?:meet\.google\.com|zoom\.us|teams\.microsoft\.com|teams\.live\.com|meet\.jit\.si|webex\.com)[^\s"'>)]+/i);
-        return match ? match[0] : null;
+        if (!match) return null;
+        return match[0].replace(/[.,;:!?\]}]+$/, "");
     },
 
     _parseHiddenCalendars: function() {
@@ -372,6 +384,13 @@ Bri3fingDesklet.prototype = {
         let nowSec = Math.floor(Date.now() / 1000);
         let leadSec = (this.notifyLeadTime || 10) * 60;
 
+        // Prune expired notification keys so memory stays bounded across long sessions
+        for (let [key, expiryTs] of this._notifiedEventIds.entries()) {
+            if (expiryTs < nowSec - 3600) {
+                this._notifiedEventIds.delete(key);
+            }
+        }
+
         for (let ev of events) {
             if (ev.all_day) continue;
             if (!ev.start_ts) continue;
@@ -381,7 +400,7 @@ Bri3fingDesklet.prototype = {
             if (diff > -60 && diff <= leadSec) {
                 let eventKey = `${ev.uid || ev.summary}_${ev.start_ts}`;
                 if (!this._notifiedEventIds.has(eventKey)) {
-                    this._notifiedEventIds.add(eventKey);
+                    this._notifiedEventIds.set(eventKey, ev.end_ts || (ev.start_ts + 3600));
 
                     let title = _("Upcoming Event: %s").replace("%s", ev.summary || _("Event"));
                     let sTime = ev.start_time_str ? this._formatTime(ev.start_time_str) : "";
@@ -434,7 +453,7 @@ Bri3fingDesklet.prototype = {
 
             let configuredH = (this.deskletHeight !== undefined && this.deskletHeight !== null)
                 ? this.deskletHeight
-                : (this.maxHeight || 290);
+                : 290;
             let autoShrink = this.autoShrinkHeight === true;
 
             // Measure header height and window vertical padding
@@ -585,9 +604,48 @@ Bri3fingDesklet.prototype = {
         }
     },
 
+    _parseHelperResult: function(success, stdout, stderr, fallbackError) {
+        let parsed = null;
+        if (stdout && stdout.trim().length > 0) {
+            try {
+                parsed = JSON.parse(stdout);
+            } catch (e) {}
+        }
+        if (!parsed && stderr && stderr.trim().length > 0) {
+            try {
+                parsed = JSON.parse(stderr);
+            } catch (e) {}
+        }
+
+        if (success && parsed && parsed.status === "success") {
+            return { ok: true, data: parsed, error: null };
+        }
+
+        let errMsg = (parsed && parsed.message)
+            ? parsed.message
+            : ((stderr && stderr.trim()) || fallbackError);
+        return { ok: false, data: parsed, error: errMsg };
+    },
+
+    _scheduleDelayedRefresh: function(delayMs) {
+        if (this._refreshDelayId) {
+            Mainloop.source_remove(this._refreshDelayId);
+            this._refreshDelayId = null;
+        }
+        this._refreshDelayId = Mainloop.timeout_add(delayMs, () => {
+            this._refreshDelayId = null;
+            this.refresh();
+            return false;
+        });
+    },
+
     refresh: function() {
-        if (this._isLoading) return;
+        if (this._isLoading) {
+            this._pendingRefresh = true;
+            return;
+        }
         this._isLoading = true;
+        this._pendingRefresh = false;
 
         if (this.dateLabel) {
             this.dateLabel.set_text(this._getFormattedCurrentDate());
@@ -604,50 +662,61 @@ Bri3fingDesklet.prototype = {
 
         this._executeHelper(args, (success, stdout, stderr) => {
             this._isLoading = false;
-            if (success) {
-                try {
-                    let data = JSON.parse(stdout);
-                    if (data.status === "success") {
-                        this._calendars = data.calendars || [];
-                        this._events = data.events || [];
-                        this._hasOnlineAccounts = (data.has_online_accounts === true);
-                        this._updateCalendarsContextMenu(this._calendars);
-                        this._checkImminentEventNotifications(this._events);
-                        this._renderSchedule(data);
+            let result = this._parseHelperResult(
+                success, stdout, stderr, _("Error querying calendar service")
+            );
 
-                        let now = new Date();
-                        let hours = String(now.getHours()).padStart(2, "0");
-                        let mins = String(now.getMinutes()).padStart(2, "0");
-                        let updatedText = _("Updated at %s").replace("%s", `${hours}:${mins}`);
+            if (result.ok) {
+                let data = result.data;
+                this._calendars = data.calendars || [];
+                this._events = data.events || [];
+                this._hasOnlineAccounts = (data.has_online_accounts === true);
+                this._lastRenderedDateStr = this._getTodayIso();
+                this._updateCalendarsContextMenu(this._calendars);
+                this._checkImminentEventNotifications(this._events);
+                this._renderSchedule(data);
 
-                        let visibleEvents = this._events.filter(e => !this._hiddenCalendarUids.has(e.calendar_uid));
-                        let todayCount = visibleEvents.filter(e => e.day_category === "today").length;
-
-                        if (!this._hasOnlineAccounts && this._events.length === 0) {
-                            this.subtitleLabel.set_text(_("No online account connected"));
-                        } else if (!this._hasOnlineAccounts && this._events.length > 0) {
-                            let countText = todayCount === 1 ? `1 ${_("event today")}` : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
-                            this.subtitleLabel.set_text(`${countText} • ${_("Local mode")}`);
-                        } else {
-                            if (todayCount === 1) {
-                                this.subtitleLabel.set_text(`1 ${_("event today")} • ${updatedText}`);
-                            } else if (todayCount > 1) {
-                                this.subtitleLabel.set_text(`${todayCount} ${_("events today")} • ${updatedText}`);
-                            } else {
-                                this.subtitleLabel.set_text(`${_("No events today")} • ${updatedText}`);
-                            }
-                        }
-                    } else {
-                        this._renderError(data.message || _("Failed to retrieve events"));
-                    }
-                } catch (e) {
-                    this._renderError(_("Failed to parse calendar data: ") + e.message);
-                }
+                let now = new Date();
+                let hours = String(now.getHours()).padStart(2, "0");
+                let mins = String(now.getMinutes()).padStart(2, "0");
+                this._lastUpdatedTimeStr = `${hours}:${mins}`;
+                this._updateHeaderSubtitle();
+            } else if (success && !result.data) {
+                this._renderError(_("Failed to parse calendar data: ") + (result.error || ""));
             } else {
-                this._renderError(stderr || _("Error querying calendar service"));
+                this._renderError(result.error || _("Failed to retrieve events"));
             }
+
             this._updateDynamicHeight();
+
+            if (this._pendingRefresh) {
+                this._pendingRefresh = false;
+                this.refresh();
+            }
         });
+    },
+
+    _updateHeaderSubtitle: function() {
+        if (!this.subtitleLabel) return;
+        let updatedText = this._lastUpdatedTimeStr
+            ? _("Updated at %s").replace("%s", this._lastUpdatedTimeStr)
+            : "";
+        let visibleEvents = this._events.filter(e => !this._hiddenCalendarUids.has(e.calendar_uid));
+        let todayCount = visibleEvents.filter(e => e.day_category === "today").length;
+
+        if (!this._hasOnlineAccounts && this._events.length === 0) {
+            this.subtitleLabel.set_text(_("No online account connected"));
+        } else if (!this._hasOnlineAccounts && this._events.length > 0) {
+            let countText = todayCount === 1
+                ? `1 ${_("event today")}`
+                : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
+            this.subtitleLabel.set_text(`${countText} • ${_("Local mode")}`);
+        } else {
+            let countText = todayCount === 1
+                ? `1 ${_("event today")}`
+                : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
+            this.subtitleLabel.set_text(updatedText ? `${countText} • ${updatedText}` : countText);
+        }
     },
 
     _renderSchedule: function(data) {
@@ -958,8 +1027,9 @@ Bri3fingDesklet.prototype = {
             row.add_actor(soonBadge);
         }
 
-        // Click row to view details / delete dialog
-        row.connect("button-press-event", () => {
+        // Left-click row to view details; let right-click bubble to Cinnamon's desklet context menu
+        row.connect("button-press-event", (actor, event) => {
+            if (event.get_button() !== 1) return Clutter.EVENT_PROPAGATE;
             this._showEventDetailsDialog(ev);
             return Clutter.EVENT_STOP;
         });
@@ -1070,29 +1140,33 @@ Bri3fingDesklet.prototype = {
         dlg.open();
     },
 
-    _deleteEvent: function(ev) {
+    _deleteEvent: function(ev, modType) {
         if (!ev.calendar_uid || !ev.uid) return;
 
         if (this.subtitleLabel) {
             this.subtitleLabel.set_text(_("Deleting event…"));
         }
 
-        this._executeHelper(["delete", "--calendar", ev.calendar_uid, "--uid", ev.uid], (success, stdout, stderr) => {
-            if (success) {
+        let args = [
+            "delete",
+            `--calendar=${ev.calendar_uid}`,
+            `--uid=${ev.uid}`
+        ];
+        if (modType === "this" && ev.recurrence_id) {
+            args.push(`--rid=${ev.recurrence_id}`, "--mod-type=this");
+        } else {
+            args.push("--mod-type=all");
+        }
+
+        this._executeHelper(args, (success, stdout, stderr) => {
+            let result = this._parseHelperResult(success, stdout, stderr, _("Failed to delete event"));
+            if (result.ok) {
                 if (this.subtitleLabel) {
                     this.subtitleLabel.set_text(_("Event deleted"));
                 }
-                Mainloop.timeout_add(300, () => {
-                    this.refresh();
-                    return false;
-                });
+                this._scheduleDelayedRefresh(300);
             } else {
-                let errMsg = stderr || _("Failed to delete event");
-                try {
-                    let parsed = JSON.parse(stderr);
-                    if (parsed && parsed.message) errMsg = parsed.message;
-                } catch (e) {}
-                this._renderError(errMsg);
+                this._renderError(result.error);
             }
         });
     },
@@ -1447,7 +1521,9 @@ Bri3fingDesklet.prototype = {
         let defaultStart = `${String(nextHour).padStart(2, "0")}:00`;
         let defaultEnd = `${String((nextHour + 1) % 24).padStart(2, "0")}:00`;
 
-        let initialDate = (isEdit && event.date_str) ? event.date_str : todayIso;
+        let initialDate = (isEdit && (event.start_date_str || event.date_str))
+            ? (event.start_date_str || event.date_str)
+            : todayIso;
         let initialStart = (isEdit && event.start_time_str) ? event.start_time_str : defaultStart;
         let initialEnd = (isEdit && event.end_time_str) ? event.end_time_str : defaultEnd;
         let isAllDay = (isEdit && event.all_day === true);
@@ -1576,72 +1652,62 @@ Bri3fingDesklet.prototype = {
                 }
                 let args = [
                     "edit",
-                    "--calendar", event.calendar_uid,
-                    "--uid", event.uid,
-                    "--summary", summary,
-                    "--date", dateVal
+                    `--calendar=${event.calendar_uid}`,
+                    `--uid=${event.uid}`,
+                    `--summary=${summary}`,
+                    `--date=${dateVal}`,
+                    `--location=${locVal}`,
+                    `--description=${descVal}`
                 ];
                 if (selectedCalendarUid && selectedCalendarUid !== event.calendar_uid) {
-                    args.push("--new-calendar", selectedCalendarUid);
+                    args.push(`--new-calendar=${selectedCalendarUid}`);
                 }
                 if (isAllDay) {
                     args.push("--all-day");
                 } else {
-                    args.push("--start", startVal, "--end", endVal);
+                    args.push("--timed", `--start=${startVal}`, `--end=${endVal}`);
                 }
-                if (locVal) args.push("--location", locVal);
-                if (descVal) args.push("--description", descVal);
 
                 this._executeHelper(args, (success, stdout, stderr) => {
-                    if (success) {
+                    let result = this._parseHelperResult(success, stdout, stderr, _("Failed to update event"));
+                    if (result.ok) {
                         if (this.subtitleLabel) {
                             this.subtitleLabel.set_text(_("Event updated!"));
                         }
-                        Mainloop.timeout_add(400, () => {
-                            this.refresh();
-                            return false;
-                        });
+                        this._scheduleDelayedRefresh(400);
                     } else {
-                        let errMsg = stderr || _("Failed to update event");
-                        try {
-                            let parsed = JSON.parse(stderr);
-                            if (parsed && parsed.message) errMsg = parsed.message;
-                        } catch (e) {}
-                        this._renderError(errMsg);
+                        this._renderError(result.error);
                     }
                 });
             } else {
                 if (this.subtitleLabel) {
                     this.subtitleLabel.set_text(_("Creating event…"));
                 }
-                let args = ["add", "--summary", summary, "--date", dateVal];
+                let args = [
+                    "add",
+                    `--summary=${summary}`,
+                    `--date=${dateVal}`
+                ];
                 if (selectedCalendarUid) {
-                    args.push("--calendar", selectedCalendarUid);
+                    args.push(`--calendar=${selectedCalendarUid}`);
                 }
                 if (isAllDay) {
                     args.push("--all-day");
                 } else {
-                    args.push("--start", startVal, "--end", endVal);
+                    args.push(`--start=${startVal}`, `--end=${endVal}`);
                 }
-                if (locVal) args.push("--location", locVal);
-                if (descVal) args.push("--description", descVal);
+                if (locVal) args.push(`--location=${locVal}`);
+                if (descVal) args.push(`--description=${descVal}`);
 
                 this._executeHelper(args, (success, stdout, stderr) => {
-                    if (success) {
+                    let result = this._parseHelperResult(success, stdout, stderr, _("Failed to create event"));
+                    if (result.ok) {
                         if (this.subtitleLabel) {
                             this.subtitleLabel.set_text(_("Event created!"));
                         }
-                        Mainloop.timeout_add(400, () => {
-                            this.refresh();
-                            return false;
-                        });
+                        this._scheduleDelayedRefresh(400);
                     } else {
-                        let errMsg = stderr || _("Failed to create event");
-                        try {
-                            let parsed = JSON.parse(stderr);
-                            if (parsed && parsed.message) errMsg = parsed.message;
-                        } catch (e) {}
-                        this._renderError(errMsg);
+                        this._renderError(result.error);
                     }
                 });
             }
@@ -1700,9 +1766,28 @@ Bri3fingDesklet.prototype = {
             Mainloop.source_remove(this._timeoutId);
             this._timeoutId = null;
         }
+        if (this._minuteTimerId) {
+            Mainloop.source_remove(this._minuteTimerId);
+            this._minuteTimerId = null;
+        }
+        if (this._refreshDelayId) {
+            Mainloop.source_remove(this._refreshDelayId);
+            this._refreshDelayId = null;
+        }
         if (this._accountsWatcherId) {
             Mainloop.source_remove(this._accountsWatcherId);
             this._accountsWatcherId = null;
+        }
+        if (this._activeDialog) {
+            try {
+                this._activeDialog.close();
+            } catch (e) {}
+            this._activeDialog = null;
+        }
+        if (this.settings) {
+            try {
+                this.settings.finalize();
+            } catch (e) {}
         }
     }
 };
