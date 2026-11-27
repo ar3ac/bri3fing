@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3 \
+            python3-gi \
+            gir1.2-ecal-2.0 \
+            gir1.2-edataserver-1.2 \
+            gir1.2-ical-3.0 \
+            gjs \
+            gettext \
+            tzdata
+
+      - name: Run unit, timezone, asset, and i18n test suite
+        run: python3 -m unittest discover -s tests -v
