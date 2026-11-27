@@ -103,6 +103,50 @@ def list_calendars(registry=None):
     return calendars
 
 
+def get_local_ical_timezone():
+    """Returns the system's local ICalGLib.Timezone, or None if unavailable."""
+    try:
+        tz = ECal.util_get_system_timezone()
+        if tz:
+            return tz
+    except Exception:
+        pass
+    try:
+        loc = ECal.util_get_system_timezone_location()
+        if loc:
+            return ICalGLib.Timezone.get_builtin_timezone(loc)
+    except Exception:
+        pass
+    return None
+
+
+def ical_time_to_timestamp(ical_time, local_zone=None):
+    """
+    Converts a timed ICalGLib.Time instance to a UTC Unix timestamp while
+    preserving its own timezone (explicit TZID, UTC 'Z', or RFC 5545 floating
+    time interpreted in the system's local timezone).
+    """
+    if ical_time.is_utc():
+        return ical_time.as_timet_with_zone(ICalGLib.Timezone.get_utc_timezone())
+
+    tz = ical_time.get_timezone()
+    if tz is not None:
+        return ical_time.as_timet_with_zone(tz)
+
+    if local_zone is not None:
+        return ical_time.as_timet_with_zone(local_zone)
+
+    local_dt = datetime.datetime(
+        ical_time.get_year(),
+        ical_time.get_month(),
+        ical_time.get_day(),
+        ical_time.get_hour(),
+        ical_time.get_minute(),
+        ical_time.get_second()
+    )
+    return int(local_dt.timestamp())
+
+
 def get_events(days_ahead=7, include_past_today=False, target_calendar_uids=None):
     """
     Queries events across enabled calendars for the specified day range.
@@ -110,6 +154,7 @@ def get_events(days_ahead=7, include_past_today=False, target_calendar_uids=None
     """
     registry = get_source_registry()
     sources = registry.list_sources(EDataServer.SOURCE_EXTENSION_CALENDAR)
+    local_zone = get_local_ical_timezone()
 
     now_dt = datetime.datetime.now()
     today_date = now_dt.date()
@@ -152,6 +197,8 @@ def get_events(days_ahead=7, include_past_today=False, target_calendar_uids=None
 
         try:
             client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 5, None)
+            if local_zone is not None:
+                client.set_default_timezone(local_zone)
         except Exception:
             continue
 
@@ -185,9 +232,8 @@ def get_events(days_ahead=7, include_past_today=False, target_calendar_uids=None
                     event_date = ev_start_date
                     is_multi_day = (display_end_date > ev_start_date)
                 else:
-                    utc_zone = ICalGLib.Timezone.get_utc_timezone()
-                    ev_start_ts = start_time.as_timet_with_zone(utc_zone)
-                    ev_end_ts = end_time.as_timet_with_zone(utc_zone)
+                    ev_start_ts = ical_time_to_timestamp(start_time, local_zone)
+                    ev_end_ts = ical_time_to_timestamp(end_time, local_zone)
 
                     start_local_dt = datetime.datetime.fromtimestamp(ev_start_ts)
                     end_local_dt = datetime.datetime.fromtimestamp(ev_end_ts)
