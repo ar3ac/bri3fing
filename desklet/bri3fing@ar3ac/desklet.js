@@ -66,6 +66,7 @@ Bri3fingDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "hidden-calendars", "hiddenCalendarsStr", () => {
             this._parseHiddenCalendars();
             this._renderSchedule({ events: this._events, calendars: this._calendars });
+            this._updateHeaderSubtitle();
         });
         this.settings.bindProperty(Settings.BindingDirection.IN, "notify-imminent-events", "notifyImminentEvents", () => {});
         this.settings.bindProperty(Settings.BindingDirection.IN, "notify-lead-time", "notifyLeadTime", () => {});
@@ -100,9 +101,10 @@ Bri3fingDesklet.prototype = {
         onlineAccountsItem.connect("activate", () => this._openOnlineAccounts());
         this._menu.addMenuItem(onlineAccountsItem);
 
-        // Initial fetch & start timer
+        // Initial fetch & start timers (EDS sync + lightweight 60s live status/countdown tick)
         this.refresh();
         this._startTimer();
+        this._startMinuteTimer();
     },
 
     _updateDecoration: function() {
@@ -370,6 +372,7 @@ Bri3fingDesklet.prototype = {
                 let val = Array.from(this._hiddenCalendarUids).join(",");
                 this.settings.setValue("hidden-calendars", val);
                 this._renderSchedule({ events: this._events, calendars: this._calendars });
+                this._updateHeaderSubtitle();
             });
             this._calendarsSubmenu.menu.addMenuItem(item);
         }
@@ -570,6 +573,67 @@ Bri3fingDesklet.prototype = {
         });
     },
 
+    _startMinuteTimer: function() {
+        if (this._minuteTimerId) {
+            Mainloop.source_remove(this._minuteTimerId);
+            this._minuteTimerId = null;
+        }
+
+        this._minuteTimerId = Mainloop.timeout_add_seconds(60, () => {
+            this._onMinuteTick();
+            return true;
+        });
+    },
+
+    _onMinuteTick: function() {
+        // Automatic midnight rollover refresh
+        let todayIso = this._getTodayIso();
+        if (this._lastRenderedDateStr && todayIso !== this._lastRenderedDateStr) {
+            if (this.dateLabel) {
+                this.dateLabel.set_text(this._getFormattedCurrentDate());
+            }
+            this.refresh();
+            return;
+        }
+
+        if (!this._events || this._events.length === 0) return;
+
+        let nowSec = Math.floor(Date.now() / 1000);
+        let statusChanged = false;
+        let endedEvents = false;
+
+        for (let ev of this._events) {
+            if (ev.all_day || !ev.start_ts || !ev.end_ts) continue;
+            let wasOngoing = ev.is_ongoing === true;
+            let wasImminent = ev.is_imminent === true;
+            let isOngoing = (ev.start_ts <= nowSec && nowSec <= ev.end_ts);
+            let diff = ev.start_ts - nowSec;
+            let isImminent = (!isOngoing && diff > 0 && diff <= 1800);
+
+            if (wasOngoing !== isOngoing || wasImminent !== isImminent) {
+                ev.is_ongoing = isOngoing;
+                ev.is_imminent = isImminent;
+                statusChanged = true;
+            }
+            if (!this.showPastEvents && ev.end_ts < nowSec) {
+                endedEvents = true;
+            }
+        }
+
+        this._checkImminentEventNotifications(this._events);
+
+        if (endedEvents && !this.showPastEvents) {
+            this._events = this._events.filter(ev => ev.all_day || !ev.end_ts || ev.end_ts >= nowSec);
+            statusChanged = true;
+        }
+
+        if (statusChanged) {
+            this._renderSchedule({ events: this._events, calendars: this._calendars });
+        }
+
+        this._updateHeaderSubtitle();
+    },
+
     _findHelperPath: function() {
         if (this.metadata && this.metadata["path"]) {
             return GLib.build_filenamev([this.metadata["path"], "eds_helper.py"]);
@@ -696,6 +760,62 @@ Bri3fingDesklet.prototype = {
         });
     },
 
+    _formatRelativeDuration: function(totalMinutes) {
+        let mins = Math.max(1, Math.round(totalMinutes));
+        if (mins < 60) {
+            return _("%d min").replace("%d", String(mins));
+        }
+        let h = Math.floor(mins / 60);
+        let m = mins % 60;
+        if (m === 0) {
+            return _("%dh").replace("%d", String(h));
+        }
+        return _("%dh %dm").replace("%d", String(h)).replace("%d", String(m));
+    },
+
+    _truncateText: function(text, maxLen) {
+        if (!text) return "";
+        if (text.length <= maxLen) return text;
+        return text.slice(0, Math.max(1, maxLen - 1)).trim() + "…";
+    },
+
+    _isHttpUrl: function(text) {
+        if (!text) return false;
+        return /^https?:\/\//i.test(text.trim());
+    },
+
+    _formatIsoDate: function(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    },
+
+    _isValidIsoDate: function(str) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+        let parts = str.split("-").map(p => parseInt(p, 10));
+        let d = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+        return d.getFullYear() === parts[0] && (d.getMonth() + 1) === parts[1] && d.getDate() === parts[2];
+    },
+
+    _isValidHhmm: function(str) {
+        let m = /^(\d{1,2}):(\d{2})$/.exec(str);
+        if (!m) return false;
+        let h = parseInt(m[1], 10);
+        let min = parseInt(m[2], 10);
+        return h >= 0 && h <= 23 && min >= 0 && min <= 59;
+    },
+
+    _addMinutesToHhmm: function(hhmm, deltaMinutes) {
+        let m = /^(\d{1,2}):(\d{2})$/.exec((hhmm || "").trim());
+        if (!m) return null;
+        let h = parseInt(m[1], 10);
+        let min = parseInt(m[2], 10);
+        if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+        let total = (h * 60 + min + deltaMinutes) % (24 * 60);
+        if (total < 0) total += 24 * 60;
+        let outH = Math.floor(total / 60);
+        let outM = total % 60;
+        return `${String(outH).padStart(2, "0")}:${String(outM).padStart(2, "0")}`;
+    },
+
     _updateHeaderSubtitle: function() {
         if (!this.subtitleLabel) return;
         let updatedText = this._lastUpdatedTimeStr
@@ -706,17 +826,39 @@ Bri3fingDesklet.prototype = {
 
         if (!this._hasOnlineAccounts && this._events.length === 0) {
             this.subtitleLabel.set_text(_("No online account connected"));
-        } else if (!this._hasOnlineAccounts && this._events.length > 0) {
-            let countText = todayCount === 1
-                ? `1 ${_("event today")}`
-                : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
-            this.subtitleLabel.set_text(`${countText} • ${_("Local mode")}`);
-        } else {
-            let countText = todayCount === 1
-                ? `1 ${_("event today")}`
-                : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
-            this.subtitleLabel.set_text(updatedText ? `${countText} • ${updatedText}` : countText);
+            return;
         }
+
+        // Live next-up briefing highlight when an event is ongoing or starting within 3 hours
+        let nowSec = Math.floor(Date.now() / 1000);
+        let timedVisible = visibleEvents.filter(e => !e.all_day && e.start_ts && e.end_ts);
+        let ongoingEv = timedVisible.find(e => e.start_ts <= nowSec && nowSec <= e.end_ts);
+        let nextEv = !ongoingEv
+            ? timedVisible.find(e => e.start_ts > nowSec && (e.start_ts - nowSec) <= 10800)
+            : null;
+
+        let suffix = !this._hasOnlineAccounts ? _("Local mode") : updatedText;
+
+        if (ongoingEv) {
+            let shortTitle = this._truncateText(ongoingEv.summary || _("Event"), 24);
+            let liveText = _("Now: %s").replace("%s", shortTitle);
+            this.subtitleLabel.set_text(suffix ? `${liveText} • ${suffix}` : liveText);
+            return;
+        }
+
+        if (nextEv) {
+            let minsLeft = Math.max(1, Math.round((nextEv.start_ts - nowSec) / 60));
+            let relStr = this._formatRelativeDuration(minsLeft);
+            let shortTitle = this._truncateText(nextEv.summary || _("Event"), 22);
+            let liveText = _("In %s: %s").replace("%s", relStr).replace("%s", shortTitle);
+            this.subtitleLabel.set_text(suffix ? `${liveText} • ${suffix}` : liveText);
+            return;
+        }
+
+        let countText = todayCount === 1
+            ? `1 ${_("event today")}`
+            : (todayCount > 1 ? `${todayCount} ${_("events today")}` : _("No events today"));
+        this.subtitleLabel.set_text(suffix ? `${countText} • ${suffix}` : countText);
     },
 
     _renderSchedule: function(data) {
@@ -954,6 +1096,10 @@ Bri3fingDesklet.prototype = {
             timeStr = `${timeStr} • ${_("multi-day")}`;
         }
 
+        if (ev.is_recurring) {
+            timeStr = `${timeStr} ↻`;
+        }
+
         let timeLabel = new St.Label({
             text: timeStr,
             style_class: "bri3fing-time-label"
@@ -1056,7 +1202,12 @@ Bri3fingDesklet.prototype = {
 
         let headerMeta = [];
         if (ev.calendar_name) headerMeta.push(ev.calendar_name);
-        if (ev.date_str) headerMeta.push(ev.date_str);
+        if (ev.start_date_str && ev.end_date_str && ev.start_date_str !== ev.end_date_str) {
+            headerMeta.push(`${ev.start_date_str} → ${ev.end_date_str}`);
+        } else if (ev.date_str) {
+            headerMeta.push(ev.date_str);
+        }
+        if (ev.is_recurring) headerMeta.push(`↻ ${_("Recurring event")}`);
 
         let content = new Dialog.MessageDialogContent({
             title: ev.summary || _("(Untitled event)"),
@@ -1079,9 +1230,10 @@ Bri3fingDesklet.prototype = {
         detailsBox.add_actor(timeLbl);
 
         // Location
-        if (ev.location && ev.location.trim().length > 0) {
+        let trimmedLoc = (ev.location || "").trim();
+        if (trimmedLoc.length > 0) {
             let locLbl = new St.Label({
-                text: `📍 ${ev.location.trim()}`,
+                text: `📍 ${trimmedLoc}`,
                 style: "color: #cbd5e1; font-size: 9.5pt;"
             });
             locLbl.clutter_text.set_line_wrap(true);
@@ -1099,41 +1251,115 @@ Bri3fingDesklet.prototype = {
             detailsBox.add_actor(descLbl);
         }
 
-        // Video meeting link in details dialog
+        // Quick action buttons (Video Meeting + Open in Maps)
         let meetingUrl = this._extractMeetingUrl(ev);
-        if (meetingUrl) {
-            let joinBtn = new St.Button({
-                style_class: "bri3fing-primary-button",
-                label: `📹 ${_("Join Video Call")}`,
-                reactive: true
+        let hasPhysicalLoc = (trimmedLoc.length > 0 && !this._isHttpUrl(trimmedLoc));
+        if (meetingUrl || hasPhysicalLoc) {
+            let quickActionsBox = new St.BoxLayout({
+                vertical: false,
+                style: "spacing: 8px; padding-top: 4px;"
             });
-            joinBtn.connect("clicked", () => {
-                Util.spawn(["xdg-open", meetingUrl]);
-                dlg.close();
-            });
-            detailsBox.add_actor(joinBtn);
+            if (meetingUrl) {
+                let joinBtn = new St.Button({
+                    style_class: "bri3fing-primary-button",
+                    label: `📹 ${_("Join Video Call")}`,
+                    reactive: true
+                });
+                joinBtn.connect("clicked", () => {
+                    Util.spawn(["xdg-open", meetingUrl]);
+                    dlg.close();
+                });
+                quickActionsBox.add_actor(joinBtn);
+            }
+            if (hasPhysicalLoc) {
+                let mapsUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(trimmedLoc)}`;
+                let mapsBtn = new St.Button({
+                    style_class: "bri3fing-secondary-button",
+                    label: `🗺 ${_("Open in Maps")}`,
+                    reactive: true
+                });
+                mapsBtn.connect("clicked", () => {
+                    Util.spawn(["xdg-open", mapsUrl]);
+                    dlg.close();
+                });
+                quickActionsBox.add_actor(mapsBtn);
+            }
+            detailsBox.add_actor(quickActionsBox);
         }
+
+        let isReadOnly = (ev.calendar_writable === false);
+        if (isReadOnly) {
+            let roLbl = new St.Label({
+                text: `🔒 ${_("Read-only calendar")}`,
+                style: "color: #94a3b8; font-size: 8.5pt; padding-top: 2px;"
+            });
+            detailsBox.add_actor(roLbl);
+        }
+
+        let buttons = [];
+        if (!isReadOnly) {
+            buttons.push(
+                {
+                    label: _("Edit Event…"),
+                    action: () => {
+                        dlg.close();
+                        this._showEditEventDialog(ev);
+                    }
+                },
+                {
+                    label: _("Delete Event"),
+                    action: () => {
+                        dlg.close();
+                        if (ev.is_recurring && ev.recurrence_id) {
+                            this._showDeleteRecurringDialog(ev);
+                        } else {
+                            this._deleteEvent(ev, "all");
+                        }
+                    }
+                }
+            );
+        }
+        buttons.push({
+            label: _("Close"),
+            action: () => dlg.close(),
+            default: true,
+            key: Clutter.KEY_Escape
+        });
+
+        dlg.setButtons(buttons);
+        dlg.open();
+    },
+
+    _showDeleteRecurringDialog: function(ev) {
+        let dlg = new ModalDialog.ModalDialog();
+        this._activeDialog = dlg;
+
+        let content = new Dialog.MessageDialogContent({
+            title: _("Delete Recurring Event"),
+            description: _("Do you want to delete only this occurrence or the entire recurring series?")
+        });
+        dlg.contentLayout.add_child(content);
 
         dlg.setButtons([
             {
-                label: _("Edit Event…"),
-                action: () => {
-                    dlg.close();
-                    this._showEditEventDialog(ev);
-                }
-            },
-            {
-                label: _("Delete Event"),
-                action: () => {
-                    dlg.close();
-                    this._deleteEvent(ev);
-                }
-            },
-            {
-                label: _("Close"),
+                label: _("Cancel"),
                 action: () => dlg.close(),
-                default: true,
                 key: Clutter.KEY_Escape
+            },
+            {
+                label: _("This Occurrence"),
+                action: () => {
+                    dlg.close();
+                    this._deleteEvent(ev, "this");
+                },
+                default: true
+            },
+            {
+                label: _("Entire Series"),
+                action: () => {
+                    dlg.close();
+                    this._deleteEvent(ev, "all");
+                }
             }
         ]);
 
@@ -1570,20 +1796,9 @@ Bri3fingDesklet.prototype = {
         endBox.add_actor(endEntry);
         dateTimeRow.add_actor(endBox);
 
-        // All Day Toggle
-        let allDayBtn = new St.Button({
-            label: isAllDay ? `☑ ${_("All Day Event")}` : `☐ ${_("All Day Event")}`,
-            style_class: isAllDay ? "bri3fing-pill-btn-active" : "bri3fing-pill-btn",
-            style: "margin-top: 2px;"
-        });
-        if (isAllDay) {
-            startEntry.set_reactive(false);
-            endEntry.set_reactive(false);
-            startEntry.set_opacity(120);
-            endEntry.set_opacity(120);
-        }
-        allDayBtn.connect("clicked", () => {
-            isAllDay = !isAllDay;
+        // All Day Toggle + Quick Date & Duration Presets
+        let setAllDayState = (flag) => {
+            isAllDay = flag;
             if (isAllDay) {
                 allDayBtn.set_label(`☑ ${_("All Day Event")}`);
                 allDayBtn.style_class = "bri3fing-pill-btn-active";
@@ -1599,8 +1814,95 @@ Bri3fingDesklet.prototype = {
                 startEntry.set_opacity(255);
                 endEntry.set_opacity(255);
             }
+        };
+
+        let presetsRow = new St.BoxLayout({ vertical: false, style: "spacing: 6px;" });
+        let makePresetBtn = (label, onClick) => {
+            let btn = new St.Button({
+                label: label,
+                style_class: "bri3fing-preset-pill",
+                reactive: true,
+                can_focus: true
+            });
+            btn.connect("clicked", onClick);
+            return btn;
+        };
+
+        presetsRow.add_actor(makePresetBtn(_("Today"), () => {
+            dateEntry.set_text(this._formatIsoDate(new Date()));
+        }));
+        presetsRow.add_actor(makePresetBtn(_("Tomorrow"), () => {
+            let d = new Date();
+            d.setDate(d.getDate() + 1);
+            dateEntry.set_text(this._formatIsoDate(d));
+        }));
+        presetsRow.add_actor(makePresetBtn(_("+1 week"), () => {
+            let d = new Date();
+            d.setDate(d.getDate() + 7);
+            dateEntry.set_text(this._formatIsoDate(d));
+        }));
+
+        let sepLbl = new St.Label({ text: "•", style: "color: #64748b; padding: 3px 2px;" });
+        presetsRow.add_actor(sepLbl);
+
+        for (let [durLabel, mins] of [["30m", 30], ["1h", 60], ["2h", 120]]) {
+            presetsRow.add_actor(makePresetBtn(durLabel, () => {
+                if (isAllDay) setAllDayState(false);
+                let baseStart = startEntry.get_text().trim() || defaultStart;
+                let computedEnd = this._addMinutesToHhmm(baseStart, mins);
+                if (computedEnd) {
+                    endEntry.set_text(computedEnd);
+                }
+            }));
+        }
+        formBox.add_actor(presetsRow);
+
+        let allDayBtn = new St.Button({
+            label: isAllDay ? `☑ ${_("All Day Event")}` : `☐ ${_("All Day Event")}`,
+            style_class: isAllDay ? "bri3fing-pill-btn-active" : "bri3fing-pill-btn",
+            style: "margin-top: 2px;"
         });
+        if (isAllDay) {
+            setAllDayState(true);
+        }
+        allDayBtn.connect("clicked", () => setAllDayState(!isAllDay));
         formBox.add_actor(allDayBtn);
+
+        // Recurring edit scope selector (defaults to single occurrence for safety)
+        let editModType = (isEdit && event.is_recurring && event.recurrence_id) ? "this" : "all";
+        if (isEdit && event.is_recurring && event.recurrence_id) {
+            let scopeBox = new St.BoxLayout({ vertical: true, style: "spacing: 4px;" });
+            let scopeLabel = new St.Label({ text: `↻ ${_("Apply changes to:")}`, style_class: "bri3fing-dialog-label" });
+            scopeBox.add_actor(scopeLabel);
+
+            let scopeRow = new St.BoxLayout({ vertical: false, style: "spacing: 8px;" });
+            let thisOccBtn = new St.Button({
+                label: _("This Occurrence"),
+                style_class: "bri3fing-pill-btn-active",
+                reactive: true,
+                can_focus: true
+            });
+            let allSeriesBtn = new St.Button({
+                label: _("Entire Series"),
+                style_class: "bri3fing-pill-btn",
+                reactive: true,
+                can_focus: true
+            });
+            thisOccBtn.connect("clicked", () => {
+                editModType = "this";
+                thisOccBtn.style_class = "bri3fing-pill-btn-active";
+                allSeriesBtn.style_class = "bri3fing-pill-btn";
+            });
+            allSeriesBtn.connect("clicked", () => {
+                editModType = "all";
+                allSeriesBtn.style_class = "bri3fing-pill-btn-active";
+                thisOccBtn.style_class = "bri3fing-pill-btn";
+            });
+            scopeRow.add_actor(thisOccBtn);
+            scopeRow.add_actor(allSeriesBtn);
+            scopeBox.add_actor(scopeRow);
+            formBox.add_actor(scopeBox);
+        }
 
         // 4. Location Input
         let locLabel = new St.Label({ text: _("Location (optional):"), style_class: "bri3fing-dialog-label" });
@@ -1632,15 +1934,43 @@ Bri3fingDesklet.prototype = {
         }
         formBox.add_actor(descEntry);
 
+        // Inline validation feedback label
+        let validationLabel = new St.Label({
+            text: "",
+            style_class: "bri3fing-validation-error",
+            visible: false
+        });
+        validationLabel.clutter_text.set_line_wrap(true);
+        formBox.add_actor(validationLabel);
+
         dlg.setInitialKeyFocus(titleEntry.clutter_text);
 
         let submit = () => {
             let summary = titleEntry.get_text().trim();
-            if (!summary) return;
+            if (!summary) {
+                validationLabel.set_text(_("Please enter an event title."));
+                validationLabel.visible = true;
+                titleEntry.clutter_text.grab_key_focus();
+                return;
+            }
 
             let dateVal = dateEntry.get_text().trim() || todayIso;
+            if (!this._isValidIsoDate(dateVal)) {
+                validationLabel.set_text(_("Invalid date format (expected YYYY-MM-DD)."));
+                validationLabel.visible = true;
+                dateEntry.clutter_text.grab_key_focus();
+                return;
+            }
+
             let startVal = startEntry.get_text().trim() || defaultStart;
             let endVal = endEntry.get_text().trim() || defaultEnd;
+            if (!isAllDay && (!this._isValidHhmm(startVal) || !this._isValidHhmm(endVal))) {
+                validationLabel.set_text(_("Invalid start or end time (expected HH:MM)."));
+                validationLabel.visible = true;
+                return;
+            }
+
+            validationLabel.visible = false;
             let locVal = locEntry.get_text().trim();
             let descVal = descEntry.get_text().trim();
 
@@ -1659,6 +1989,9 @@ Bri3fingDesklet.prototype = {
                     `--location=${locVal}`,
                     `--description=${descVal}`
                 ];
+                if (event.is_recurring && event.recurrence_id) {
+                    args.push(`--rid=${event.recurrence_id}`, `--mod-type=${editModType}`);
+                }
                 if (selectedCalendarUid && selectedCalendarUid !== event.calendar_uid) {
                     args.push(`--new-calendar=${selectedCalendarUid}`);
                 }
