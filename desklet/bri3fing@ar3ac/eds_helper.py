@@ -575,15 +575,43 @@ def _apply_event_times_and_dates(ical_comp, date_str=None, start_time_str=None, 
         start_dt = datetime.datetime(target_date.year, target_date.month, target_date.day, start_hour, start_minute)
         end_dt = datetime.datetime(end_date.year, end_date.month, end_date.day, end_hour, end_minute)
 
-        start_ts = int(start_dt.timestamp())
-        end_ts = int(end_dt.timestamp())
+        tzid_name = None
+        if preserve_zone is not None:
+            tz_loc = preserve_zone.get_location() or preserve_zone.get_tzid() or ""
+            if tz_loc and tz_loc.upper() not in ("UTC", "ETC/UTC", "GMT", "Z"):
+                tzid_name = tz_loc
 
-        target_zone = preserve_zone if preserve_zone is not None else ICalGLib.Timezone.get_utc_timezone()
-        t_start = ICalGLib.Time.new_from_timet_with_zone(start_ts, 0, target_zone)
-        t_end = ICalGLib.Time.new_from_timet_with_zone(end_ts, 0, target_zone)
+        if tzid_name:
+            t_start = ICalGLib.Time.new_null_time()
+            t_start.set_date(target_date.year, target_date.month, target_date.day)
+            t_start.set_time(start_hour, start_minute, 0)
+            t_start.set_timezone(preserve_zone)
 
-        ical_comp.set_dtstart(t_start)
-        ical_comp.set_dtend(t_end)
+            t_end = ICalGLib.Time.new_null_time()
+            t_end.set_date(end_date.year, end_date.month, end_date.day)
+            t_end.set_time(end_hour, end_minute, 0)
+            t_end.set_timezone(preserve_zone)
+
+            _remove_all_properties(ical_comp, ICalGLib.PropertyKind.DTSTART_PROPERTY)
+            _remove_all_properties(ical_comp, ICalGLib.PropertyKind.DTEND_PROPERTY)
+
+            prop_s = ICalGLib.Property.new_dtstart(t_start)
+            prop_s.set_parameter(ICalGLib.Parameter.new_tzid(tzid_name))
+            ical_comp.add_property(prop_s)
+
+            prop_e = ICalGLib.Property.new_dtend(t_end)
+            prop_e.set_parameter(ICalGLib.Parameter.new_tzid(tzid_name))
+            ical_comp.add_property(prop_e)
+        else:
+            start_ts = int(start_dt.timestamp())
+            end_ts = int(end_dt.timestamp())
+
+            utc_zone = ICalGLib.Timezone.get_utc_timezone()
+            t_start = ICalGLib.Time.new_from_timet_with_zone(start_ts, 0, utc_zone)
+            t_end = ICalGLib.Time.new_from_timet_with_zone(end_ts, 0, utc_zone)
+
+            ical_comp.set_dtstart(t_start)
+            ical_comp.set_dtend(t_end)
 
 
 def add_event(calendar_uid, summary, date_str=None, start_time_str=None, end_time_str=None, all_day=False, location=None, description=None):
